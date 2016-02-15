@@ -1,5 +1,5 @@
 
-#include "main.h"
+#include "main.hpp"
 
 /**
  *
@@ -8,7 +8,7 @@
  */
 void TcpSocket::connect() {
     if(m_service_type == UNDEF) {
-        throw SocketException("sys_type_not_specified");
+        throw SocketException("service_type_not_specified");
     }
     
     if(m_service_type == SERVER) {
@@ -18,7 +18,7 @@ void TcpSocket::connect() {
         SocketBase::connect_client();
     }
     else {
-        throw SocketException("invalid_sys_type");
+        throw SocketException("invalid_service_type");
     }
 }
 
@@ -28,7 +28,7 @@ void TcpSocket::connect() {
  *
  * @return void
  */
-void TcpSocket::respond(const std::string& message) {
+void TcpSocket::send(const std::string& message) {
     if(m_socket_tcp == -1) {
         throw SocketException("socket_not_established");
     }
@@ -36,7 +36,7 @@ void TcpSocket::respond(const std::string& message) {
     size_t n = write(m_socket_tcp, message.c_str(), message.size());
     
     if(n == -1) {
-        throw SocketException("write_failed");
+        throw SocketException("write_failed: %s", strerror(errno));
     }
 }
 
@@ -46,22 +46,21 @@ void TcpSocket::respond(const std::string& message) {
  * @return std::string
  */
 std::string TcpSocket::receive() {
-    std::string received(m_buf_size, 0);
     char buffer[ m_buf_size ];
     
-    m_socket_tcp = accept(m_socket, (struct sockaddr*)&m_cli_addr, &m_sockaddr_in_size);
+    m_socket_tcp = accept(m_socket, (struct sockaddr*)&m_sockaddr, &m_sockaddr_in_size);
     
     if(m_socket_tcp == -1) {
-        throw SocketException("socket_not_established");
+        throw SocketException("accept_failed: %s", strerror(errno));
     }
     
     memset(buffer, 0, sizeof(buffer));
     
     if(read(m_socket_tcp, buffer, sizeof(buffer)) == -1) {
-        throw SocketException("read_failed");
+        throw SocketException("read_failed: %s", strerror(errno));
     }
     
-    received = std::string(buffer);
-    
-    return received;
+    return std::string(buffer, sizeof(buffer));
 }
+
+

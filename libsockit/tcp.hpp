@@ -34,7 +34,7 @@ public:
     }
     
     void connect();
-    void respond(const std::string&);
+    void send(const std::string&);
     
     std::string receive();
 };

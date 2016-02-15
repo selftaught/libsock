@@ -4,17 +4,16 @@
 
 /**
  * Cross platform header files
- *  <cstdint> - Is used for int typedefs.
+ *  <cstdint>   - Is used for int typedefs.
  *  <exception> - Is used for creating our custom socket exception classes.
- *  <cerrno> -
  *  <algorithm> - Is used for std::remove
- *  <
+ *  <cstdarg>   - Is used for va_list
  */
 #include <iostream>
 #include <exception>
-#include <cerrno>
 #include <algorithm>
 #include <cstdint>
+#include <cstdarg>
 
 #if defined(__WIN32) || defined(__WIN64)
 
@@ -36,8 +35,8 @@
 /**
  * Project headers
  */
-#include "socket.h"
-#include "udp.h"
-#include "tcp.h"
+#include "socket.hpp"
+#include "udp.hpp"
+#include "tcp.hpp"
 
 #endif

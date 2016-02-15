@@ -9,6 +9,18 @@
 #define UDP_RECV_BUF_LEN 576
 #define TCP_RECV_BUF_LEN 1500
 
+/**
+ * Buffer length for char errbuf[] in SocketException->init.
+ * This length defines the max length of an error message 
+ * that can be thrown by SockException.
+ */
+#define ERR_BUF_LEN 256
+
+/**
+ * Not really neccessary because IPPROTO_TCP and IPPROTO_UDP
+ * are both 0 but, meh. This function macro gets used in 
+ * SocketBase::connect_client and SocketBase::connect_server.
+ */
 #define IPPROTO(TYPE) ((TYPE) == (SOCK_STREAM) ? (IPPROTO_TCP) : (IPPROTO_UDP))
 
 enum SERVICE_TYPE {
@@ -28,12 +40,15 @@ public:
      * Constructor (C strings).
      * @param message C-style string error message.
      *                 The string contents are copied upon construction.
-     *                 Hence, responsibility for deleting the \c char* lies
+     *                 Hence, responsibility for deleting the char* lies
      *                 with the caller.
      */
-    explicit SocketException(const char* message):
-        msg_(message)
-    {}
+    explicit SocketException(const char* fmt, ...) {
+        va_list ap;
+        va_start(ap, fmt);
+        this->init(fmt, ap);
+        va_end(ap);
+    }
     
     /** 
      * Constructor (C++ STL strings).
@@ -51,8 +66,8 @@ public:
     
     /** 
      * Returns a pointer to the (constant) error description.
-     * @return A pointer to a \c const \c char*. The underlying memory
-     *          is in posession of the \c Exception object. Callers \a must
+     * @return A pointer to a const char*. The underlying memory
+     *          is in posession of the Exception object. Callers must
      *          not attempt to free the memory.
      */
     virtual const char* what() throw() {
@@ -64,6 +79,15 @@ protected:
      * Error message.
      */
     std::string msg_;
+    
+    /**
+     *
+     */
+    void init(const char* fmt, va_list ap) {
+        char errbuf[256];
+        vsnprintf(errbuf, sizeof(errbuf), fmt, ap);
+        msg_ = errbuf;
+    }
 };
 
 /**
@@ -93,8 +117,7 @@ protected:
     /**
      * Structure where connection info will be stored.
      */
-    struct sockaddr_in m_server_addr;
-    struct sockaddr_in m_cli_addr;
+    struct sockaddr_in m_sockaddr;
     
     /**
      * Address family.
@@ -138,7 +161,7 @@ protected:
     int m_socket;
     int m_socket_tcp;
 
-    struct hostent* m_server;
+    struct hostent* m_host;
     
     /**
      * Else the system is windows.
@@ -203,7 +226,7 @@ public:
      */
     void disconnect();
     virtual void connect() = 0;
-    virtual void respond(const std::string&) = 0;
+    virtual void send(const std::string&) = 0;
     virtual std::string receive() = 0;
     
     /**
