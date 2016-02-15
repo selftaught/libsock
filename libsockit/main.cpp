@@ -8,10 +8,10 @@ enum TYPE {
 
 int main(int argc, const char * argv[]) {
     
-    TYPE type = UDP;
+    TYPE type = TCP;
     
     if(type == TCP) {
-        TcpServerSocket* server = new TcpServerSocket(2000);
+        TcpSocket* server = new TcpSocket(2000);
         
         try {
             server->connect();
@@ -27,14 +27,14 @@ int main(int argc, const char * argv[]) {
                 sleep(1);
             }
         }
-        catch(SocketException& e) {
+        catch(SocketException e) {
             std::cout << e.what() << std::endl;
         }
         
         delete server;
     }
     else {
-        UdpServerSocket* server = new UdpServerSocket(2001);
+        UdpSocket* server = new UdpSocket(2001);
         
         try {
             server->connect();
@@ -45,13 +45,13 @@ int main(int argc, const char * argv[]) {
                 if(!received.empty()) {
                     std::cout << received << std::endl;
                     std::cout << received.size() << std::endl << std::endl;
-                    //server->respond("<html><body>got it</body></html>");
+                    server->respond("got your message");
                 }
                 
                 //sleep(1);
             }
         }
-        catch(SocketException& e) {
+        catch(SocketException e) {
             std::cout << e.what() << std::endl;
         }
         

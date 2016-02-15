@@ -2,73 +2,68 @@
 #ifndef socket_h
 #define socket_h
 
+/**
+ * Default recv char array lengths
+ * for the UDP and TCP protocols.
+ */
 #define UDP_RECV_BUF_LEN 576
 #define TCP_RECV_BUF_LEN 1500
 
 #define IPPROTO(TYPE) ((TYPE) == (SOCK_STREAM) ? (IPPROTO_TCP) : (IPPROTO_UDP))
 
+enum SERVICE_TYPE {
+    UNDEF,
+    CLIENT,
+    SERVER
+};
+
 /**
- * Exception classes
+ * SocketException class
+ *
+ * @credits: http://stackoverflow.com/questions/8152720/correct-way-to-inherit-from-stdexception
  */
 class SocketException : public std::exception {
 public:
-    virtual const char* what() throw() = 0;
-};
-
-class SocketPortUndefinedException : public SocketException {
-public:
-    const char* what() throw () {
-        return "port_not_defined";
+    /** 
+     * Constructor (C strings).
+     * @param message C-style string error message.
+     *                 The string contents are copied upon construction.
+     *                 Hence, responsibility for deleting the \c char* lies
+     *                 with the caller.
+     */
+    explicit SocketException(const char* message):
+        msg_(message)
+    {}
+    
+    /** 
+     * Constructor (C++ STL strings).
+     * @param message The error message.
+     */
+    explicit SocketException(const std::string& message):
+        msg_(message)
+    {}
+    
+    /** 
+     * Destructor.
+     * Virtual to allow for subclassing.
+     */
+    virtual ~SocketException() throw() {}
+    
+    /** 
+     * Returns a pointer to the (constant) error description.
+     * @return A pointer to a \c const \c char*. The underlying memory
+     *          is in posession of the \c Exception object. Callers \a must
+     *          not attempt to free the memory.
+     */
+    virtual const char* what() throw() {
+        return msg_.c_str();
     }
-};
-
-class SocketConnectException : public SocketException {
-public:
-    const char* what() throw () {
-        return "socket_conncetion_failed";
-    }
-};
-
-class SocketBindingFailedException : public SocketException {
-public:
-    const char* what() throw () {
-        return "socket_binding_failed";
-    }
-};
-
-class SocketAcceptFailedException : public SocketException {
-public:
-    const char* what() throw () {
-        return "socket_accept_failed";
-    }
-};
-
-class SocketReadException : public SocketException {
-public:
-    const char* what() throw () {
-        return "socket_read_failed";
-    }
-};
-
-class SocketWriteException : public SocketException {
-public:
-    const char* what() throw () {
-        return "socket_read_failed";
-    }
-};
-
-class SocketNotEstablishedException : public SocketException {
-public:
-    const char* what() throw() {
-        return "socket_not_established";
-    }
-};
-
-class SocketRecvException : public SocketException {
-public:
-    const char* what() throw() {
-        return "socket_recvfrom_failed";
-    }
+    
+protected:
+    /**
+     * Error message.
+     */
+    std::string msg_;
 };
 
 /**
@@ -93,7 +88,7 @@ protected:
     /**
      *
      */
-    uint16_t m_recv_buf_size;
+    uint16_t m_buf_size;
     
     /**
      * Structure where connection info will be stored.
@@ -127,6 +122,11 @@ protected:
     socklen_t m_sockaddr_in_size;
     
     /**
+     * Service type (SYSTEM_TYPE::CLIENT or SYSTEM_TYPE::SERVER)
+     */
+    SERVICE_TYPE m_service_type;
+    
+    /**
      * If the current system is *nix or apple
      */
 #if defined(__NIX)
@@ -156,35 +156,38 @@ public:
     /**
      * Constructors.
      */
-    SocketBase(const int& type, uint16_t recv_buf_size):
+    SocketBase(const int& type, uint16_t buf_size):
         m_port(0),
         m_socket(-1),
         m_af(AF_INET),
         m_type(type),
         m_backlog(5),
-        m_recv_buf_size(recv_buf_size),
-        m_sockaddr_in_size(sizeof(struct sockaddr_in))
+        m_buf_size(buf_size),
+        m_sockaddr_in_size(sizeof(struct sockaddr_in)),
+        m_service_type(SERVER)
     { }
     
-    SocketBase(const uint16_t& port, const int& type, uint16_t recv_buf_size):
+    SocketBase(const uint16_t& port, const int& type, uint16_t buf_size):
         m_port(port),
         m_socket(-1),
         m_af(AF_INET),
         m_type(type),
         m_backlog(5),
-        m_recv_buf_size(recv_buf_size),
-        m_sockaddr_in_size(sizeof(struct sockaddr_in))
+        m_buf_size(buf_size),
+        m_sockaddr_in_size(sizeof(struct sockaddr_in)),
+        m_service_type(SERVER)
     { }
     
-    SocketBase(const std::string& hostname, const uint16_t& port, const int& type, uint16_t recv_buf_size):
+    SocketBase(const std::string& hostname, const uint16_t& port, const int& type, uint16_t buf_size):
         m_hostname(hostname),
         m_port(port),
         m_socket(-1),
         m_af(AF_INET),
         m_type(type),
         m_backlog(5),
-        m_recv_buf_size(recv_buf_size),
-        m_sockaddr_in_size(sizeof(struct sockaddr_in))
+        m_buf_size(buf_size),
+        m_sockaddr_in_size(sizeof(struct sockaddr_in)),
+        m_service_type(CLIENT)
     { }
     
     SocketBase(const std::string&, const int&, uint16_t);
@@ -224,6 +227,15 @@ public:
     
     void set_backlog(const uint32_t& backlog) {
         m_backlog = backlog;
+    }
+    
+    /**
+     * Explicitly declare the service type (CLIENT or SERVER)
+     * despite the fact the service type get's intelligently
+     * set in the constructor.
+     */
+    void set_service_type(const SERVICE_TYPE& type) {
+        m_service_type = type;
     }
 };
 

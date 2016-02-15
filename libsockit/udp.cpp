@@ -1,30 +1,31 @@
 
 #include "main.h"
 
-void UdpClientSocket::connect() {
-    SocketBase::connect_client();
-}
-
-void UdpServerSocket::connect() {
+void UdpSocket::connect() {
     SocketBase::connect_server();
 }
 
-void UdpServerSocket::respond(const std::string& response) {
+void UdpSocket::respond(const std::string& response) {
     if(m_socket == -1) {
-        throw SocketNotEstablishedException();
+        throw SocketException("socket_not_established");
+    }
+    
+    ssize_t n = sendto(m_socket, response.c_str(), response.size(), 0, (struct sockaddr*)&m_cli_addr, m_sockaddr_in_size);
+    
+    if(n == -1) {
+        throw SocketException("sendto_failed");
     }
 }
 
-std::string UdpServerSocket::receive() {
-    char recv_buf[ m_recv_buf_size ];
-    bzero(recv_buf, m_recv_buf_size);
+std::string UdpSocket::receive() {
+    char recv_buf[m_buf_size];
+    bzero(recv_buf, m_buf_size);
     
-    ssize_t n = recvfrom(m_socket, recv_buf, m_recv_buf_size, 0, (struct sockaddr*)&m_cli_addr, &m_sockaddr_in_size);
+    ssize_t n = recvfrom(m_socket, recv_buf, m_buf_size, 0, (struct sockaddr*)&m_cli_addr, &m_sockaddr_in_size);
 
     if(n == -1) {
-        throw SocketRecvException();
+        throw SocketException("recvfrom_failed");
     }
 
     return std::string(recv_buf);
 }
-

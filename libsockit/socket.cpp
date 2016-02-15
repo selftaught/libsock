@@ -1,13 +1,14 @@
 
 #include "main.h"
 
-SocketBase::SocketBase(const std::string& port, const int& type, uint16_t recv_buf_size) {
-    m_port    = atoi(port.c_str());
-    m_socket  = -1;
-    m_af      = AF_INET;
-    m_type    = type;
-    m_backlog = 5;
-    m_recv_buf_size = recv_buf_size;
+SocketBase::SocketBase(const std::string& port, const int& type, uint16_t buf_size) {
+    m_port         = atoi(port.c_str());
+    m_socket       = -1;
+    m_af           = AF_INET;
+    m_type         = type;
+    m_backlog      = 5;
+    m_buf_size     = buf_size;
+    m_service_type = SERVER;
 #if defined(__NIX)
     m_sockaddr_in_size = sizeof(struct sockaddr_in);
 #else
@@ -15,14 +16,15 @@ SocketBase::SocketBase(const std::string& port, const int& type, uint16_t recv_b
 #endif
 }
 
-SocketBase::SocketBase(const std::string& hostname, const std::string& port, const int& type, uint16_t recv_buf_size) {
-    m_hostname = hostname;
-    m_port     = atoi(port.c_str());
-    m_socket   = -1;
-    m_af       = AF_INET;
-    m_type     = type;
-    m_backlog  = 5;
-    m_recv_buf_size = recv_buf_size;
+SocketBase::SocketBase(const std::string& hostname, const std::string& port, const int& type, uint16_t buf_size) {
+    m_hostname     = hostname;
+    m_port         = atoi(port.c_str());
+    m_socket       = -1;
+    m_af           = AF_INET;
+    m_type         = type;
+    m_backlog      = 5;
+    m_buf_size     = buf_size;
+    m_service_type = UNDEF;
 #if defined(__NIX)
     m_sockaddr_in_size = sizeof(struct sockaddr_in);
 #else
@@ -47,7 +49,7 @@ void SocketBase::connect_server() {
      * Throw an exception if the port hasn't be defined by the user.
      */
     if(!m_port) {
-        throw SocketPortUndefinedException();
+        throw SocketException("port_not_defined");
     }
     
 #if defined(__NIX)
@@ -57,7 +59,7 @@ void SocketBase::connect_server() {
      * Throw an exception if the socket connection failed.
      */
     if(m_socket == -1) {
-        throw SocketConnectException();
+        throw SocketException("socket_failed");
     }
     
     /**
@@ -78,7 +80,7 @@ void SocketBase::connect_server() {
      * If binding fails, throw an exception.
      */
     if(bind(m_socket, (struct sockaddr*)&m_server_addr, sizeof(struct sockaddr_in)) == -1) {
-        throw SocketConnectException();
+        throw SocketException("bind_failed");
     }
     
     /**
@@ -105,7 +107,7 @@ void SocketBase::connect_client() {
      * by the user.
      */
     if(!m_port) {
-        throw SocketPortUndefinedException();
+        throw SocketException("port_not_defined");
     }
     
 #if defined(__NIX)

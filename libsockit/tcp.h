@@ -3,9 +3,9 @@
 #define ____tcp__
 
 /**
- * TCP (stream) client socket class.
+ * TCP (stream) socket class.
  */
-class TcpClientSocket : public SocketBase {
+class TcpSocket : public SocketBase {
 public:
     /**
      * Constructors
@@ -13,54 +13,24 @@ public:
      * Default m_recv_buf_size is because the MTU (Max Transmission Unit)
      * for ethernet is TCP_RECV_BUF_LEN bytes.
      */
-    TcpClientSocket(const uint16_t& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
+    TcpSocket(const uint16_t& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
         SocketBase(port, SOCK_STREAM, buf_size)
     { }
     
-    TcpClientSocket(const std::string& hostname, const uint16_t& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
+    TcpSocket(const std::string& hostname, const uint16_t& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
         SocketBase(hostname, port, SOCK_STREAM, buf_size)
     { }
     
-    TcpClientSocket(const std::string& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
+    TcpSocket(const std::string& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
         SocketBase(port, SOCK_STREAM, buf_size)
     { }
     
-    TcpClientSocket(const std::string& hostname, const std::string& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
+    TcpSocket(const std::string& hostname, const std::string& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
         SocketBase(hostname, port, SOCK_STREAM, buf_size)
     { }
     
-    void connect();
-};
-
-/**
- * TCP (stream) server socket class.
- */
-class TcpServerSocket : public SocketBase {
-public:
-    /**
-     * Constructors
-     *
-     * Default m_recv_buf_size is because the MTU (Max Transmission Unit)
-     * for ethernet is TCP_RECV_BUF_LEN bytes.
-     */
-    TcpServerSocket(const uint16_t& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
-        SocketBase(port, SOCK_STREAM, buf_size)
-    { }
-    
-    TcpServerSocket(const std::string& hostname, const uint16_t& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
-        SocketBase(hostname, port, SOCK_STREAM, buf_size)
-    { }
-    
-    TcpServerSocket(const std::string& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
-        SocketBase(port, SOCK_STREAM, buf_size)
-    { }
-    
-    TcpServerSocket(const std::string& hostname, const std::string& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
-        SocketBase(hostname, port, SOCK_STREAM, buf_size)
-    { }
-    
-    void set_recv_buf_size(const uint16_t& size) {
-        m_recv_buf_size = size;
+    void set_buf_size(const uint16_t& size) {
+        m_buf_size = size;
     }
     
     void connect();
