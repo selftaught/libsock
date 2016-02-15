@@ -1,21 +1,33 @@
 
 #include "main.h"
 
-SocketBase::SocketBase(const std::string& port, const int& type) {
+SocketBase::SocketBase(const std::string& port, const int& type, uint16_t recv_buf_size) {
     m_port    = atoi(port.c_str());
     m_socket  = -1;
     m_af      = AF_INET;
     m_type    = type;
     m_backlog = 5;
+    m_recv_buf_size = recv_buf_size;
+#if defined(__NIX)
+    m_sockaddr_in_size = sizeof(struct sockaddr_in);
+#else
+    
+#endif
 }
 
-SocketBase::SocketBase(const std::string& hostname, const std::string& port, const int& type) {
+SocketBase::SocketBase(const std::string& hostname, const std::string& port, const int& type, uint16_t recv_buf_size) {
     m_hostname = hostname;
     m_port     = atoi(port.c_str());
     m_socket   = -1;
     m_af       = AF_INET;
     m_type     = type;
     m_backlog  = 5;
+    m_recv_buf_size = recv_buf_size;
+#if defined(__NIX)
+    m_sockaddr_in_size = sizeof(struct sockaddr_in);
+#else
+    
+#endif
 }
 
 SocketBase::~SocketBase() {
@@ -39,7 +51,7 @@ void SocketBase::connect_server() {
     }
     
 #if defined(__NIX)
-    m_socket = socket(m_af, m_type, 0);
+    m_socket = socket(m_af, m_type, IPPROTO(m_type));
     
     /**
      * Throw an exception if the socket connection failed.
@@ -48,14 +60,12 @@ void SocketBase::connect_server() {
         throw SocketConnectException();
     }
     
-    int sockaddr_in_size = sizeof(m_server_addr);
-    
     /**
      * Set all bytes of m_server_addr to zero.
      * memset() is MT-Safe
      * See: http://man7.org/linux/man-pages/man3/memset.3.html
      */
-    memset(m_server, sockaddr_in_size, 0);
+    memset(m_server, sizeof(struct sockaddr_in), 0);
     
     /**
      * Connection info.
@@ -67,7 +77,7 @@ void SocketBase::connect_server() {
     /**
      * If binding fails, throw an exception.
      */
-    if(bind(m_socket, (struct sockaddr*)&m_server_addr, sockaddr_in_size) == -1) {
+    if(bind(m_socket, (struct sockaddr*)&m_server_addr, sizeof(struct sockaddr_in)) == -1) {
         throw SocketConnectException();
     }
     
@@ -99,7 +109,7 @@ void SocketBase::connect_client() {
     }
     
 #if defined(__NIX)
-    m_socket = socket(m_af, m_type, 0);
+    m_socket = socket(m_af, m_type, IPPROTO(m_type));
 #else
     /**
      * @TODO: implement winsock
@@ -119,3 +129,5 @@ void SocketBase::disconnect() {
     
 #endif
 }
+
+

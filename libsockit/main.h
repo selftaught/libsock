@@ -2,14 +2,18 @@
 #ifndef main_h
 #define main_h
 
-#include <iostream>
-#include <exception>
-#include <cerrno>
-
 /**
  * Cross platform header files
  *  <cstdint> - Is used for int typedefs.
+ *  <exception> - Is used for creating our custom socket exception classes.
+ *  <cerrno> -
+ *  <algorithm> - Is used for std::remove
+ *  <
  */
+#include <iostream>
+#include <exception>
+#include <cerrno>
+#include <algorithm>
 #include <cstdint>
 
 #if defined(__WIN32) || defined(__WIN64)

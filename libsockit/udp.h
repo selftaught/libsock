@@ -10,20 +10,20 @@ public:
     /**
      * Constructors
      */
-    UdpClientSocket(const uint16_t& port):
-        SocketBase(port)
+    UdpClientSocket(const uint16_t& port, uint16_t buf_size = UDP_RECV_BUF_LEN):
+        SocketBase(port, SOCK_DGRAM, buf_size)
     { }
     
-    UdpClientSocket(const std::string& hostname, const uint16_t& port):
-        SocketBase(hostname, port, SOCK_DGRAM)
+    UdpClientSocket(const std::string& hostname, const uint16_t& port, uint16_t buf_size = UDP_RECV_BUF_LEN):
+        SocketBase(hostname, port, SOCK_DGRAM, buf_size)
     { }
     
-    UdpClientSocket(const std::string& port):
-        SocketBase(port, SOCK_DGRAM)
+    UdpClientSocket(const std::string& port, uint16_t buf_size = 576):
+        SocketBase(port, SOCK_DGRAM, buf_size)
     { }
     
-    UdpClientSocket(const std::string& hostname, const std::string& port):
-        SocketBase(hostname, port, SOCK_DGRAM)
+    UdpClientSocket(const std::string& hostname, const std::string& port, uint16_t buf_size = UDP_RECV_BUF_LEN):
+        SocketBase(hostname, port, SOCK_DGRAM, buf_size)
     { }
     
     void connect();
@@ -37,25 +37,26 @@ public:
     /**
      * Constructors
      */
-    UdpServerSocket(const uint16_t& port):
-        SocketBase(port)
+    UdpServerSocket(const uint16_t& port, uint16_t buf_size = UDP_RECV_BUF_LEN):
+        SocketBase(port, SOCK_DGRAM, buf_size)
     { }
     
-    UdpServerSocket(const std::string& hostname, const uint16_t& port):
-        SocketBase(hostname, port)
+    UdpServerSocket(const std::string& hostname, const uint16_t& port, uint16_t buf_size = UDP_RECV_BUF_LEN):
+        SocketBase(hostname, port, SOCK_DGRAM, buf_size)
     { }
     
-    UdpServerSocket(const std::string& port):
-        SocketBase(port, SOCK_DGRAM)
+    UdpServerSocket(const std::string& port, uint16_t buf_size = UDP_RECV_BUF_LEN):
+        SocketBase(port, SOCK_DGRAM, buf_size)
     { }
     
-    UdpServerSocket(const std::string& hostname, const std::string& port):
-        SocketBase(hostname, port, SOCK_DGRAM)
+    UdpServerSocket(const std::string& hostname, const std::string& port, uint16_t buf_size = UDP_RECV_BUF_LEN):
+        SocketBase(hostname, port, SOCK_DGRAM, buf_size)
     { }
     
     void connect();
+    void respond(const std::string&);
     
-    virtual void respond(const std::string&);
+    std::string receive();
 };
 
 #endif
