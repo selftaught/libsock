@@ -128,25 +128,28 @@ void SocketBase::connect_client() {
         throw SocketException("gethostbyname_failed: %s", hstrerror(h_errno));
     }
     
+    /**
+     * Zero out m_sockaddr struct and then copy the
+     * host address to it's sin_addr member variable.
+     */
     bzero((char*)&m_sockaddr, sizeof(m_sockaddr));
-    
-    m_sockaddr.sin_family = m_af;
-    
     bcopy((char*)m_host->h_addr, (char*)&m_sockaddr.sin_addr, m_host->h_length);
+    
+    /**
+     * Set address family and port.
+     */
+    m_sockaddr.sin_family = m_af;
+    m_sockaddr.sin_port   = htons(m_port);
     
     /**
      * TCP
      */
     if(m_type == SOCK_STREAM) {
-        
+        if(::connect(m_socket, (struct sockaddr*)&m_sockaddr, m_sockaddr_in_size) == -1) {
+            throw SocketException("connect_failed: %s", strerror(errno));
+        }
     }
-    /**
-     * UDP
-     */
-    else {
-        
-    }
-    
+
 #else
     /**
      * @TODO: implement winsock

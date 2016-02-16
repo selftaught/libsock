@@ -11,20 +11,16 @@ int main(int argc, const char * argv[]) {
     TYPE type = TCP;
     
     if(type == TCP) {
-        TcpSocket* server = new TcpSocket(2000);
+        TcpSocket* server = new TcpSocket("d2jsp.org", "80");
         
         try {
             server->connect();
+            server->send("GET / HTTP/1.1\r\nHost: d2jsp.org\n\r\n");
             
-            while(true) {
-                std::string received = server->receive();
+            std::string received = server->receive();
                 
-                if(!received.empty()) {
-                    std::cout << received << std::endl;
-                    server->respond("<html><body>got it</body></html>");
-                }
-                
-                sleep(1);
+            if(!received.empty()) {
+                std::cout << received << std::endl;
             }
         }
         catch(SocketException e) {
@@ -45,10 +41,8 @@ int main(int argc, const char * argv[]) {
                 if(!received.empty()) {
                     std::cout << received << std::endl;
                     std::cout << received.size() << std::endl << std::endl;
-                    server->respond("got your message");
+                    server->send("got your message");
                 }
-                
-                //sleep(1);
             }
         }
         catch(SocketException e) {
