@@ -7,7 +7,7 @@
  *  <cstdint>   - Is used for int typedefs.
  *  <exception> - Is used for creating our custom socket exception classes.
  *  <algorithm> - Is used for std::remove
- *  <cstdarg>   - Is used for va_list
+ *  <cstdarg>   - Is used for va_list in SocketException
  */
 #include <iostream>
 #include <exception>

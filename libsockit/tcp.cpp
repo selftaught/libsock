@@ -67,20 +67,11 @@ std::string TcpSocket::receive() {
         received = buffer;
     }
     else {
-        while(true) {
-            ssize_t n = read(m_socket, buffer, m_buf_size);
-            std::cout << n << std::endl;
-            
-            if(n == -1) {
-                throw SocketException("read_failed: %s", strerror(errno));
-            }
-            else if(n == 0) {
-                break;
-            }
-            
-            std::cout << buffer << std::endl << std::endl;
-            
-            received += buffer;
+        ssize_t n = read(m_socket, buffer, m_buf_size);
+        received = buffer;
+        
+        if(n == -1) {
+            throw SocketException("read_failed: %s", strerror(errno));
         }
     }
     

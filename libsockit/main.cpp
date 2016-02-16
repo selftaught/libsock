@@ -12,15 +12,27 @@ int main(int argc, const char * argv[]) {
     
     if(type == TCP) {
         TcpSocket* server = new TcpSocket("d2jsp.org", "80");
+        int counter = 0;
         
         try {
             server->connect();
             server->send("GET / HTTP/1.1\r\nHost: d2jsp.org\n\r\n");
             
-            std::string received = server->receive();
-                
-            if(!received.empty()) {
-                std::cout << received << std::endl;
+            
+            while(true) {
+                std::string received = server->receive();
+                    
+                if(received.empty()) {
+                    std::cout << "empty" << std::endl;
+                    counter++;
+                    
+                    if(counter == 10) {
+                        break;
+                    }
+                }
+                else {
+                    std::cout << received << std::endl;
+                }
             }
         }
         catch(SocketException e) {
