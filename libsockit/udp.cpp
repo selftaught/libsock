@@ -1,10 +1,6 @@
 
 #include "main.hpp"
 
-void UdpSocket::connect() {
-    SocketBase::connect_server();
-}
-
 void UdpSocket::send(const std::string& response) {
     if(m_socket == -1) {
         throw SocketException("socket_not_established");

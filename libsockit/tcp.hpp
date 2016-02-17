@@ -33,7 +33,6 @@ public:
         m_buf_size = size;
     }
     
-    void connect();
     void send(const std::string&);
     
     std::string receive();

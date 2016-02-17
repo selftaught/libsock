@@ -225,7 +225,8 @@ public:
      * Prototypes.
      */
     void disconnect();
-    virtual void connect() = 0;
+    void connect();
+    
     virtual void send(const std::string&) = 0;
     virtual std::string receive() = 0;
     

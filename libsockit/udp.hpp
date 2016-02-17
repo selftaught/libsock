@@ -26,7 +26,6 @@ public:
         SocketBase(hostname, port, SOCK_DGRAM, buf_size)
     { }
     
-    void connect();
     void send(const std::string&);
     
     std::string receive();

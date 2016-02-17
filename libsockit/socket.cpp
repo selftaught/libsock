@@ -44,6 +44,21 @@ SocketBase::~SocketBase() {
 /**
  *
  */
+void SocketBase::connect() {
+    if(m_service_type == UNDEF) {
+        throw SocketException("service_type_not_specified");
+    }
+    
+         if(m_service_type == SERVER) { connect_server(); }
+    else if(m_service_type == CLIENT) { connect_client(); }
+    else {
+        throw SocketException("invalid_service_type");
+    }
+}
+
+/**
+ *
+ */
 void SocketBase::connect_server() {
     /**
      * Throw an exception if the port hasn't be defined by the user.

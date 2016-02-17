@@ -2,27 +2,7 @@
 #include "main.hpp"
 
 /**
- *
- *
- * @return void
- */
-void TcpSocket::connect() {
-    if(m_service_type == UNDEF) {
-        throw SocketException("service_type_not_specified");
-    }
-    
-    if(m_service_type == SERVER) {
-        SocketBase::connect_server();
-    }
-    else if(m_service_type == CLIENT) {
-        SocketBase::connect_client();
-    }
-    else {
-        throw SocketException("invalid_service_type");
-    }
-}
-
-/**
+ * Send data through a TCP socket.
  *
  * @param
  *
@@ -43,14 +23,17 @@ void TcpSocket::send(const std::string& message) {
 }
 
 /**
- *
+ * Receive data from a TCP socket and return that data as a string.
  *
  * @return std::string
  */
 std::string TcpSocket::receive() {
-    std::string received;
+    std::string received("", m_buf_size);
     char buffer[ m_buf_size ];
     
+    /**
+     * Fill the entire buffer with 0's.
+     */
     memset(buffer, 0, sizeof(buffer));
     
     if(m_service_type == SERVER) {
