@@ -241,6 +241,10 @@ public:
         m_port = port;
     }
     
+    void set_port(const std::string& port) {
+        m_port = atoi(port.c_str());
+    }
+    
     void set_address_family(const int& address_family) {
         m_af = address_family;
     }
