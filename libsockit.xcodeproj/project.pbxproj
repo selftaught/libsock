@@ -28,13 +28,13 @@
 /* Begin PBXFileReference section */
 		B16242B01C6ECC8F00B23D6C /* libsockit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = libsockit; sourceTree = BUILT_PRODUCTS_DIR; };
 		B16242BA1C6ECCBF00B23D6C /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		B16242BB1C6ECCBF00B23D6C /* main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
+		B16242BB1C6ECCBF00B23D6C /* main.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = main.hpp; sourceTree = "<group>"; };
 		B16242BC1C6ECCBF00B23D6C /* socket.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = socket.cpp; sourceTree = "<group>"; };
-		B16242BD1C6ECCBF00B23D6C /* socket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = socket.h; sourceTree = "<group>"; };
+		B16242BD1C6ECCBF00B23D6C /* socket.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = socket.hpp; sourceTree = "<group>"; };
 		B16242BE1C6ECCBF00B23D6C /* tcp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tcp.cpp; sourceTree = "<group>"; };
-		B16242BF1C6ECCBF00B23D6C /* tcp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tcp.h; sourceTree = "<group>"; };
+		B16242BF1C6ECCBF00B23D6C /* tcp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = tcp.hpp; sourceTree = "<group>"; };
 		B16242C01C6ECCBF00B23D6C /* udp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = udp.cpp; sourceTree = "<group>"; };
-		B16242C11C6ECCBF00B23D6C /* udp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = udp.h; sourceTree = "<group>"; };
+		B16242C11C6ECCBF00B23D6C /* udp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = udp.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,13 +68,13 @@
 			isa = PBXGroup;
 			children = (
 				B16242BA1C6ECCBF00B23D6C /* main.cpp */,
-				B16242BB1C6ECCBF00B23D6C /* main.h */,
+				B16242BB1C6ECCBF00B23D6C /* main.hpp */,
 				B16242BC1C6ECCBF00B23D6C /* socket.cpp */,
-				B16242BD1C6ECCBF00B23D6C /* socket.h */,
+				B16242BD1C6ECCBF00B23D6C /* socket.hpp */,
 				B16242BE1C6ECCBF00B23D6C /* tcp.cpp */,
-				B16242BF1C6ECCBF00B23D6C /* tcp.h */,
+				B16242BF1C6ECCBF00B23D6C /* tcp.hpp */,
 				B16242C01C6ECCBF00B23D6C /* udp.cpp */,
-				B16242C11C6ECCBF00B23D6C /* udp.h */,
+				B16242C11C6ECCBF00B23D6C /* udp.hpp */,
 			);
 			path = libsockit;
 			sourceTree = "<group>";
@@ -224,6 +224,7 @@
 		B16242B81C6ECC8F00B23D6C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -231,6 +232,7 @@
 		B16242B91C6ECC8F00B23D6C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -254,6 +256,7 @@
 				B16242B91C6ECC8F00B23D6C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

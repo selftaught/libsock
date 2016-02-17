@@ -11,13 +11,12 @@ int main(int argc, const char * argv[]) {
     TYPE type = TCP;
     
     if(type == TCP) {
-        TcpSocket* server = new TcpSocket("d2jsp.org", "80");
+        TcpSocket* server = new TcpSocket("www.4chan.org", 80);
         int counter = 0;
         
         try {
             server->connect();
-            server->send("GET / HTTP/1.1\r\nHost: d2jsp.org\n\r\n");
-            
+            server->send("GET / HTTP/1.1\r\nHost: www.4chan.org\n\r\n");
             
             while(true) {
                 std::string received = server->receive();
@@ -31,7 +30,7 @@ int main(int argc, const char * argv[]) {
                     }
                 }
                 else {
-                    std::cout << received << std::endl;
+                    std::cout << received << std::endl << "\n------------------------------------\n" << std::endl;
                 }
             }
         }

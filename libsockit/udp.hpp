@@ -18,8 +18,8 @@ public:
         SocketBase(hostname, port, SOCK_DGRAM, buf_size)
     { }
     
-    UdpSocket(const std::string& port, uint16_t buf_size = UDP_RECV_BUF_LEN):
-        SocketBase(port, SOCK_DGRAM, buf_size)
+    UdpSocket(const std::string& port):
+        SocketBase(port, SOCK_DGRAM, UDP_RECV_BUF_LEN)
     { }
     
     UdpSocket(const std::string& hostname, const std::string& port, uint16_t buf_size = UDP_RECV_BUF_LEN):

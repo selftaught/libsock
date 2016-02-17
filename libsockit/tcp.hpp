@@ -21,8 +21,8 @@ public:
         SocketBase(hostname, port, SOCK_STREAM, buf_size)
     { }
     
-    TcpSocket(const std::string& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
-        SocketBase(port, SOCK_STREAM, buf_size)
+    TcpSocket(const std::string& port):
+        SocketBase(port, SOCK_STREAM, TCP_RECV_BUF_LEN)
     { }
     
     TcpSocket(const std::string& hostname, const std::string& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
