@@ -137,7 +137,7 @@ void SocketBase::connect_client() {
      * Zero out m_sockaddr struct and then copy the
      * host address to it's sin_addr member variable.
      */
-    bzero((char*)&m_sockaddr, sizeof(m_sockaddr));
+    memset(&m_sockaddr, 0, sizeof(struct sockaddr_in));
     bcopy((char*)m_host->h_addr, (char*)&m_sockaddr.sin_addr, m_host->h_length);
     
     /**
