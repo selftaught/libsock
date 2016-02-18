@@ -29,6 +29,11 @@ enum SERVICE_TYPE {
     SERVER
 };
 
+enum IP {
+    V4,
+    V6
+};
+
 /**
  * Define the default socket value. This is done because without
  * it, we'd have to add preprocessor conditions to each constructor
@@ -111,6 +116,11 @@ protected:
  */
 class SocketBase {
 protected:
+    
+    /**
+     * IP version.
+     */
+    IP m_ip_version;
     
     /**
      * Hostname to connect to.
@@ -266,6 +276,14 @@ public:
     
     void set_backlog(const uint32_t& backlog) {
         m_backlog = backlog;
+    }
+    
+    void set_ipv4() {
+        m_ip_version = IP::V4;
+    }
+    
+    void set_ipv6() {
+        m_ip_version = IP::V6;
     }
     
     /**

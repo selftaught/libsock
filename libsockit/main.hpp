@@ -8,6 +8,8 @@
  *  <exception> - Is used for creating our custom socket exception classes.
  *  <algorithm> - Is used for std::remove
  *  <cstdarg>   - Is used for va_list in SocketException
+ *  <string>    - Is used so VS doesn't bitch when writing a simple line like 'std::cout << string << std::endl;'
+ *  <memory>    - Is used for smart pointers.
  */
 #include <iostream>
 #include <exception>

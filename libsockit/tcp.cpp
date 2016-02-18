@@ -33,7 +33,7 @@ void TcpSocket::send(const std::string& message) {
  */
 std::string TcpSocket::receive() {
     std::string received("", m_buf_size);
-	std::unique_ptr<char[]> buffer(new char[m_buf_size]);
+	std::unique_ptr<char[ ]> buffer(new char[ m_buf_size ]);
 
 #if defined(__NIX)
     /**
@@ -42,7 +42,7 @@ std::string TcpSocket::receive() {
     memset(buffer.get(), 0, m_buf_size);
     
     /**
-     * If the software using this code has been declared as a SERVER.
+     * If the software using this lib has been declared as a SERVER.
      */
     if(m_service_type == SERVER) {
         socklen_t sock_size = sizeof(struct sockaddr_in);
@@ -59,8 +59,9 @@ std::string TcpSocket::receive() {
         
         received = buffer.get();
     }
+    
     /**
-     * If the software using this code has been declared as a CLIENT.
+     * If the software using this lib has been declared as a CLIENT.
      */
     else {
         ssize_t n = read(m_socket, buffer.get(), m_buf_size);
