@@ -111,7 +111,7 @@ protected:
 /**
  * Base socket class.
  *
- * This is the class which Socket::UDP and Socket::TCP are derived from.
+ * This is the class which UdpSocket and TcpSocket are derived from.
  *
  */
 class SocketBase {

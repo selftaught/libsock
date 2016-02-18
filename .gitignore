@@ -3,4 +3,5 @@ Debug
 libsockit/Debug
 libsocket.sdf
 libsocket.sln
-.v2
+.vs
+libsockit/.vs
