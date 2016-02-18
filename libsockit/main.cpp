@@ -32,6 +32,8 @@ int main(int argc, const char * argv[]) {
                 else {
                     std::cout << received << std::endl /*<< "\n------------------------------------\n" << std::endl*/;
                 }
+
+				break;
             }
         }
         catch(SocketException e) {

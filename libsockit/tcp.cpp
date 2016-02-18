@@ -8,7 +8,8 @@
  *
  * @return void
  */
-void TcpSocket::send(const std::string& message) {    
+void TcpSocket::send(const std::string& message) {
+#if defined(__NIX)
     int socket = (m_service_type == SERVER ? m_socket_tcp : m_socket);
     
     if(socket == -1) {
@@ -20,6 +21,9 @@ void TcpSocket::send(const std::string& message) {
     if(n == -1) {
         throw SocketException("write_failed: %s", strerror(errno));
     }
+#else
+
+#endif
 }
 
 /**
@@ -29,12 +33,13 @@ void TcpSocket::send(const std::string& message) {
  */
 std::string TcpSocket::receive() {
     std::string received("", m_buf_size);
-    char buffer[ m_buf_size ];
+	std::unique_ptr<char[]> buffer(new char[m_buf_size]);
     
+#if defined(__NIX)
     /**
      * Fill the entire buffer with 0's.
      */
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer.get(), 0, sizeof(buffer));
     
     if(m_service_type == SERVER) {
         m_socket_tcp = accept(m_socket, (struct sockaddr*)&m_sockaddr, &m_sockaddr_in_size);
@@ -57,6 +62,9 @@ std::string TcpSocket::receive() {
             throw SocketException("read_failed: %s", strerror(errno));
         }
     }
+#else
+
+#endif
     
     return received;
 }

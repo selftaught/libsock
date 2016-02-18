@@ -30,6 +30,19 @@ enum SERVICE_TYPE {
 };
 
 /**
+ * Define the default socket value. This is done because without
+ * it, we'd have to add preprocessor conditions to each constructor
+ * of SocketBase checking and defining m_socket based on the current
+ * system. However, by define DEFAULT_SOCKET_VAL, we don't need to do that.
+ * We can simply define m_socket like m_socket(DEFAULT_SOCKET_VAL) instead.
+ */
+#if defined (__NIX)
+	#define DEFAULT_SOCKET_VAL -1
+#else
+	#define DEFAULT_SOCKET_VAL INVALID_SOCKET
+#endif
+
+/**
  * SocketException class
  *
  * @credits: http://stackoverflow.com/questions/8152720/correct-way-to-inherit-from-stdexception
@@ -140,11 +153,6 @@ protected:
     int m_protocol;
     
     /**
-     *
-     */
-    socklen_t m_sockaddr_in_size;
-    
-    /**
      * Service type (SYSTEM_TYPE::CLIENT or SYSTEM_TYPE::SERVER)
      */
     SERVICE_TYPE m_service_type;
@@ -162,13 +170,19 @@ protected:
     int m_socket_tcp;
 
     struct hostent* m_host;
-    
+
     /**
      * Else the system is windows.
      */
 #else
+
     SOCKET  m_socket;
     WSADATA m_wsa;
+
+	struct addrinfo *m_result;
+	struct addrinfo *m_ptr;
+	struct addrinfo  m_hints;
+
 #endif
     
     void connect_server();
@@ -180,36 +194,33 @@ public:
      * Constructors.
      */
     SocketBase(const int& type, uint16_t buf_size):
+		m_socket(DEFAULT_SOCKET_VAL),
         m_port(0),
-        m_socket(-1),
         m_af(AF_INET),
         m_type(type),
         m_backlog(5),
         m_buf_size(buf_size),
-        m_sockaddr_in_size(sizeof(struct sockaddr_in)),
         m_service_type(SERVER)
     { }
     
     SocketBase(const uint16_t& port, const int& type, uint16_t buf_size):
-        m_port(port),
-        m_socket(-1),
+        m_socket(DEFAULT_SOCKET_VAL),
+		m_port(port),
         m_af(AF_INET),
         m_type(type),
         m_backlog(5),
         m_buf_size(buf_size),
-        m_sockaddr_in_size(sizeof(struct sockaddr_in)),
         m_service_type(SERVER)
     { }
     
     SocketBase(const std::string& hostname, const uint16_t& port, const int& type, uint16_t buf_size):
+		m_socket(DEFAULT_SOCKET_VAL),
         m_hostname(hostname),
         m_port(port),
-        m_socket(-1),
         m_af(AF_INET),
         m_type(type),
         m_backlog(5),
         m_buf_size(buf_size),
-        m_sockaddr_in_size(sizeof(struct sockaddr_in)),
         m_service_type(CLIENT)
     { }
     

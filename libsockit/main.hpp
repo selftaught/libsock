@@ -14,12 +14,37 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdarg>
+#include <string>
+#include <memory>
 
-#if defined(__WIN32) || defined(__WIN64)
+/**
+ * Make sure __cplusplus is defined because it's value will tell us what version of 
+ * C++ the compiler supports. It's value should be <= 199711L in pre-C++11 compilers.
+ * A different solution may need to be implemented to detect whether or not the compiler
+ * supports C++11. This isn't that reliable of a solution.
+ *
+ * @source: http://stackoverflow.com/questions/10717502/is-there-a-preprocessor-directive-for-detecting-c11x-support
+ */
+#if defined(__cplusplus)
+	/**
+	 * If the 
+	 */
+	#if __cplusplus > 199711L
+		#define CPP11 1
+	#else
+		#define CPP11 0
+	#endif
+#else
+	#error A C++ compiler is required...
+#endif
+
+#if defined(_WIN32) || defined(_WIN64)
 
     #define __WIN 1
 
-    #include <WinSock2.h>
+	#include <WinSock2.h>
+
+	#pragma comment(lib, "ws2_32.lib")
 
 #elif defined(__APPLE__) || defined(__linux__)
 
