@@ -30,6 +30,7 @@
 /* Begin PBXFileReference section */
 		81085CF31C74E6F5006860F3 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = SOURCE_ROOT; };
 		81085CF41C74E6F5006860F3 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
+		B13259D31C7595F7009293A9 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		B16242B01C6ECC8F00B23D6C /* libsockit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = libsockit; sourceTree = BUILT_PRODUCTS_DIR; };
 		B16242BA1C6ECCBF00B23D6C /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		B16242BB1C6ECCBF00B23D6C /* main.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = main.hpp; sourceTree = "<group>"; };
@@ -71,6 +72,7 @@
 		B16242B21C6ECC8F00B23D6C /* libsockit */ = {
 			isa = PBXGroup;
 			children = (
+				B13259D31C7595F7009293A9 /* CMakeLists.txt */,
 				81085CF31C74E6F5006860F3 /* Makefile */,
 				81085CF41C74E6F5006860F3 /* README.md */,
 				B16242BA1C6ECCBF00B23D6C /* main.cpp */,
