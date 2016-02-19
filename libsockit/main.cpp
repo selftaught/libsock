@@ -22,6 +22,7 @@ int main(int argc, const char * argv[]) {
                 std::string received = server->receive();
                     
                 if(received.empty()) {
+					break;
                     std::cout << "empty" << std::endl;
                     counter++;
                     

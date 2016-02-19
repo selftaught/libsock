@@ -1,7 +1,11 @@
 .DS_Store
+.vs
 Debug
 libsockit/Debug
 libsocket.sdf
 libsocket.sln
-.vs
 libsockit/.vs
+libsockit.opensdf
+libsockit/libsockit.sdf
+libsockit/libsockit.sln
+libsockit/libsockit.vcxproj.user

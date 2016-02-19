@@ -45,6 +45,7 @@ enum IP {
 	#define DEFAULT_SOCKET_VAL -1
 #else
 	#define DEFAULT_SOCKET_VAL INVALID_SOCKET
+	#define WIN32_LEAN_AND_MEAN
 #endif
 
 /**
@@ -187,6 +188,7 @@ protected:
 #else
 
     SOCKET  m_socket;
+	SOCKET  m_socket_client;
     WSADATA m_wsa;
 
 	struct addrinfo *m_result;

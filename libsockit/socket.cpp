@@ -32,7 +32,8 @@ SocketBase::~SocketBase() {
 }
 
 /**
- *
+ * Calls the correct connect function (server or client) 
+ * based on the value of m_service_type;
  */
 void SocketBase::connect() {
     if(m_service_type == UNDEF) {
@@ -47,7 +48,7 @@ void SocketBase::connect() {
 }
 
 /**
- *
+ * Does the needful to setup a server socket.
  */
 void SocketBase::connect_server() {
     /**
@@ -97,13 +98,40 @@ void SocketBase::connect_server() {
     
 #else
     /**
-     * @TODO: implement winsock
+     * Initiate the use of Winsock DLL
      */
+	int err = WSAStartup(MAKEWORD(2, 2), &m_wsa);
+
+	if (err != 0) {
+		throw SocketException("WSAStartup failed: %d", err);
+	}
+
+	ZeroMemory(&m_hints, sizeof(m_hints));
+
+	m_hints.ai_family	= m_af;
+	m_hints.ai_socktype = m_type;
+	m_hints.ai_protocol = IPPROTO(m_type);
+	m_hints.ai_flags	= AI_PASSIVE;
+
+	err = getaddrinfo(NULL, std::to_string(m_port).c_str(), &m_hints, &m_result);
+
+	if (err != 0) {
+		disconnect();
+		throw SocketException("getaddrinfo failed: %d", err);
+	}
+
+	m_socket = socket(m_result->ai_family, m_result->ai_socktype, m_result->ai_protocol);
+
+	if (m_socket == INVALID_SOCKET) {
+		disconnect();
+		throw SocketException("socket failed with error: %ld", WSAGetLastError());
+	}
+
 #endif
 }
 
 /**
- *
+ * Does the needful to setup a client socket.
  */
 void SocketBase::connect_client() {
     /**
@@ -171,7 +199,11 @@ void SocketBase::disconnect() {
         close(m_socket);
     }
 #else
-    
+	if (m_result != NULL) {
+		freeaddrinfo(m_result);
+	}
+
+	WSACleanup();
 #endif
 }
 

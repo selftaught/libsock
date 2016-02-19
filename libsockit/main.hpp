@@ -45,6 +45,7 @@
     #define __WIN 1
 
 	#include <WinSock2.h>
+	#include <ws2tcpip.h>
 
 	#pragma comment(lib, "ws2_32.lib")
 
@@ -62,6 +63,7 @@
 /**
  * Project headers
  */
+#include "helpers.hpp"
 #include "socket.hpp"
 #include "udp.hpp"
 #include "tcp.hpp"
