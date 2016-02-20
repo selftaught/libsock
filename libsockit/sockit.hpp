@@ -1,6 +1,65 @@
 
-#ifndef socket_h
-#define socket_h
+#ifndef __sockit_h
+#define __sockit_h
+
+/**
+ * Cross platform header files
+ *  <cstdint>   - Is used for int typedefs.
+ *  <exception> - Is used for creating our custom socket exception classes.
+ *  <algorithm> - Is used for std::remove
+ *  <cstdarg>   - Is used for va_list in SocketException
+ *  <string>    - Is used so VS doesn't bitch when writing a simple line like 'std::cout << string << std::endl;'
+ *  <memory>    - Is used for smart pointers.
+ */
+#include <iostream>
+#include <exception>
+#include <algorithm>
+#include <cstdint>
+#include <cstdarg>
+#include <string>
+#include <memory>
+
+/**
+ * Make sure __cplusplus is defined because it's value will tell us what version of
+ * C++ the compiler supports. It's value should be <= 199711L in pre-C++11 compilers.
+ * A different solution may need to be implemented to detect whether or not the compiler
+ * supports C++11. This isn't that reliable of a solution.
+ *
+ * @source: http://stackoverflow.com/questions/10717502/is-there-a-preprocessor-directive-for-detecting-c11x-support
+ */
+#if defined(__cplusplus)
+/**
+ * If the
+ */
+#if __cplusplus > 199711L
+#define CPP11 1
+#else
+#define CPP11 0
+#endif
+#else
+#error A C++ compiler is required...
+#endif
+
+#if defined(_WIN32) || defined(_WIN64)
+
+#define __WIN 1
+
+#include <WinSock2.h>
+#include <ws2tcpip.h>
+
+#pragma comment(lib, "ws2_32.lib")
+
+#elif defined(__APPLE__) || defined(__linux__)
+
+#define __NIX 1
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <fcntl.h>
+#endif
 
 /**
  * Default recv char array lengths
@@ -15,6 +74,12 @@
  * that can be thrown by SockException.
  */
 #define ERR_BUF_LEN 256
+
+/**
+ *
+ */
+#define DEFAULT_TV_SEC  5
+#define DEFAULT_TV_USEC 0
 
 /**
  * Not really neccessary because IPPROTO_TCP and IPPROTO_UDP
@@ -169,6 +234,15 @@ protected:
     SERVICE_TYPE m_service_type;
     
     /**
+     * File descriptor sets used for the
+     * non-blocking implementation.
+     */
+    fd_set m_active_fd_set;
+    fd_set m_read_fd_set;
+    
+    struct timeval m_time;
+    
+    /**
      * If the current system is *nix or apple
      */
 #if defined(__NIX)
@@ -212,8 +286,10 @@ public:
         m_type(type),
         m_backlog(5),
         m_buf_size(buf_size),
-        m_service_type(SERVER)
-    { }
+        m_service_type(SERVER) {
+            m_time.tv_sec  = DEFAULT_TV_SEC;
+            m_time.tv_usec = DEFAULT_TV_USEC;
+        }
     
     SocketBase(const uint16_t& port, const int& type, uint16_t buf_size):
         m_socket(DEFAULT_SOCKET_VAL),
@@ -222,8 +298,10 @@ public:
         m_type(type),
         m_backlog(5),
         m_buf_size(buf_size),
-        m_service_type(SERVER)
-    { }
+        m_service_type(SERVER) {
+            m_time.tv_sec  = DEFAULT_TV_SEC;
+            m_time.tv_usec = DEFAULT_TV_USEC;
+        }
     
     SocketBase(const std::string& hostname, const uint16_t& port, const int& type, uint16_t buf_size):
 		m_socket(DEFAULT_SOCKET_VAL),
@@ -233,8 +311,10 @@ public:
         m_type(type),
         m_backlog(5),
         m_buf_size(buf_size),
-        m_service_type(CLIENT)
-    { }
+        m_service_type(CLIENT) {
+            m_time.tv_sec  = DEFAULT_TV_SEC;
+            m_time.tv_usec = DEFAULT_TV_USEC;
+        }
     
     SocketBase(const std::string&, const int&, uint16_t);
     SocketBase(const std::string&, const std::string&, const int&, uint16_t);
@@ -249,6 +329,8 @@ public:
      */
     void disconnect();
     void connect();
+    void setnonblocking(int);
+    void setblocking();
     
     virtual void send(const std::string&) = 0;
     virtual std::string receive() = 0;
@@ -281,11 +363,11 @@ public:
     }
     
     void set_ipv4() {
-        m_ip_version = IP::V4;
+        m_ip_version = V4;
     }
     
     void set_ipv6() {
-        m_ip_version = IP::V6;
+        m_ip_version =V6;
     }
     
     /**
@@ -296,6 +378,71 @@ public:
     void set_service_type(const SERVICE_TYPE& type) {
         m_service_type = type;
     }
+};
+
+/**
+ * TCP (stream) socket class.
+ */
+class TcpSocket : public SocketBase {
+public:
+    /**
+     * Constructors
+     *
+     * Default m_recv_buf_size is because the MTU (Max Transmission Unit)
+     * for ethernet is TCP_RECV_BUF_LEN bytes.
+     */
+    TcpSocket(const uint16_t& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
+    SocketBase(port, SOCK_STREAM, buf_size)
+    { }
+    
+    TcpSocket(const std::string& hostname, const uint16_t& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
+    SocketBase(hostname, port, SOCK_STREAM, buf_size)
+    { }
+    
+    TcpSocket(const std::string& port):
+    SocketBase(port, SOCK_STREAM, TCP_RECV_BUF_LEN)
+    { }
+    
+    TcpSocket(const std::string& hostname, const std::string& port, uint16_t buf_size = TCP_RECV_BUF_LEN):
+    SocketBase(hostname, port, SOCK_STREAM, buf_size)
+    { }
+    
+    void set_buf_size(const uint16_t& size) {
+        m_buf_size = size;
+    }
+    
+    void send(const std::string&);
+    
+    std::string receive();
+};
+
+/**
+ * UDP (datagram) socket class.
+ */
+class UdpSocket : public SocketBase {
+public:
+    /**
+     * Constructors
+     */
+    UdpSocket(const uint16_t& port, uint16_t buf_size = UDP_RECV_BUF_LEN):
+    SocketBase(port, SOCK_DGRAM, buf_size)
+    { }
+    
+    UdpSocket(const std::string& hostname, const uint16_t& port, uint16_t buf_size = UDP_RECV_BUF_LEN):
+    SocketBase(hostname, port, SOCK_DGRAM, buf_size)
+    { }
+    
+    UdpSocket(const std::string& port):
+    SocketBase(port, SOCK_DGRAM, UDP_RECV_BUF_LEN)
+    { }
+    
+    UdpSocket(const std::string& hostname, const std::string& port, uint16_t buf_size = UDP_RECV_BUF_LEN):
+    SocketBase(hostname, port, SOCK_DGRAM, buf_size)
+    { }
+    
+    void send(const std::string&);
+    
+    std::string receive();
 };
 
 #endif

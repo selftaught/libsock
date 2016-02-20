@@ -1,5 +1,5 @@
 
-#include "main.hpp"
+#include "sockit.hpp"
 
 SocketBase::SocketBase(const std::string& port, const int& type, uint16_t buf_size) {
 	m_socket	   = DEFAULT_SOCKET_VAL;
@@ -9,6 +9,8 @@ SocketBase::SocketBase(const std::string& port, const int& type, uint16_t buf_si
     m_backlog      = 5;
     m_buf_size     = buf_size;
     m_service_type = SERVER;
+    m_time.tv_sec  = DEFAULT_TV_SEC;
+    m_time.tv_usec = DEFAULT_TV_USEC;
 }
 
 SocketBase::SocketBase(const std::string& hostname, const std::string& port, const int& type, uint16_t buf_size) {
@@ -20,6 +22,8 @@ SocketBase::SocketBase(const std::string& hostname, const std::string& port, con
     m_backlog      = 5;
     m_buf_size     = buf_size;
     m_service_type = CLIENT;
+    m_time.tv_sec  = DEFAULT_TV_SEC;
+    m_time.tv_usec = DEFAULT_TV_USEC;
 }
 
 SocketBase::~SocketBase() {
@@ -45,6 +49,23 @@ void SocketBase::connect() {
     else {
         throw SocketException("invalid_service_type");
     }
+}
+
+/**
+ * Closes the socket if it's open.
+ */
+void SocketBase::disconnect() {
+#if defined(__NIX)
+    if(m_socket != -1) {
+        close(m_socket);
+    }
+#else
+    if (m_result != NULL) {
+        freeaddrinfo(m_result);
+    }
+    
+    WSACleanup();
+#endif
 }
 
 /**
@@ -138,14 +159,14 @@ void SocketBase::connect_client() {
      * Throw an exception if the port hasn't be defined by the user.
      */
     if(!m_port) {
-        throw SocketException("port_not_defined");
+        throw SocketException("port isn't defined");
     }
     
     /**
      * Throw an exception if the hostname hasn't be defined by the user.
      */
     if(m_hostname.empty()) {
-        throw SocketException("hostname_not_defined");
+        throw SocketException("hostname isn't defined");
     }
     
 #if defined(__NIX)
@@ -155,10 +176,19 @@ void SocketBase::connect_client() {
         throw SocketException("socket_failed: %s", strerror(errno));
     }
     
+    /**
+     * So that we can re-bind to it without TIME_WAIT problems 
+     */
+    int reuse_addr = 1;
+    
+    setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
+    
+    setnonblocking(m_socket);
+    
     m_host = gethostbyname(m_hostname.c_str());
     
     if(m_host == NULL) {
-        throw SocketException("gethostbyname_failed: %s", hstrerror(h_errno));
+        throw SocketException("gethostbyname failed: %s", hstrerror(h_errno));
     }
     
     /**
@@ -179,7 +209,23 @@ void SocketBase::connect_client() {
      */
     if(m_type == SOCK_STREAM) {
         if(::connect(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
-            throw SocketException("connect_failed: %s", strerror(errno));
+            if(errno == EINPROGRESS) {
+                FD_ZERO(&m_active_fd_set);
+                FD_SET(m_socket, &m_active_fd_set);
+
+                if (select(m_socket + 1, NULL, &m_active_fd_set, NULL, &m_time) > 0) {
+                    socklen_t lon = sizeof(int);
+                    int optval;
+                    getsockopt(m_socket, SOL_SOCKET, SO_ERROR, &optval, &lon);
+                    
+                    if(optval) {
+                        throw SocketException("getsockopt failed: %s", strerror(optval));
+                    }
+                }
+            }
+            else {
+                throw SocketException("connect failed: %s", strerror(errno));
+            }
         }
     }
 
@@ -191,20 +237,26 @@ void SocketBase::connect_client() {
 }
 
 /**
- * Closes the socket if it's open.
+ *
  */
-void SocketBase::disconnect() {
-#if defined(__NIX)
-    if(m_socket != -1) {
-        close(m_socket);
+void SocketBase::setnonblocking(int socket) {
+    int opts = fcntl(socket, F_GETFL);
+    
+    if (opts == -1) {
+        throw SocketException("fcntl(F_GETFL): %s", strerror(errno));
     }
-#else
-	if (m_result != NULL) {
-		freeaddrinfo(m_result);
-	}
-
-	WSACleanup();
-#endif
+    
+    opts |= O_NONBLOCK;
+    
+    if (fcntl(socket, F_SETFL, opts) == -1) {
+        throw SocketException("fcntl(F_SETFL): %s", strerror(errno));
+    }
 }
 
+/**
+ *
+ */
+void SocketBase::setblocking() {
+
+}
 
