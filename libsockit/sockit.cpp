@@ -9,8 +9,8 @@ SocketBase::SocketBase(const std::string& port, const int& type, uint16_t buf_si
     m_backlog      = 5;
     m_buf_size     = buf_size;
     m_service_type = SERVER;
-    m_time.tv_sec  = DEFAULT_TV_SEC;
-    m_time.tv_usec = DEFAULT_TV_USEC;
+    //m_time.tv_sec  = DEFAULT_TV_SEC;
+    //m_time.tv_usec = DEFAULT_TV_USEC;
 }
 
 SocketBase::SocketBase(const std::string& hostname, const std::string& port, const int& type, uint16_t buf_size) {
@@ -22,8 +22,8 @@ SocketBase::SocketBase(const std::string& hostname, const std::string& port, con
     m_backlog      = 5;
     m_buf_size     = buf_size;
     m_service_type = CLIENT;
-    m_time.tv_sec  = DEFAULT_TV_SEC;
-    m_time.tv_usec = DEFAULT_TV_USEC;
+    //m_time.tv_sec  = DEFAULT_TV_SEC;
+    //m_time.tv_usec = DEFAULT_TV_USEC;
 }
 
 SocketBase::~SocketBase() {
@@ -106,6 +106,7 @@ void SocketBase::connect_server() {
      * If binding fails, throw an exception.
      */
     if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
+        close(m_socket);
         throw SocketException("bind_failed: %s", strerror(errno));
     }
     
@@ -152,7 +153,7 @@ void SocketBase::connect_server() {
 }
 
 /**
- * Does the needful to setup a client socket.
+ * Establishes a client connection.
  */
 void SocketBase::connect_client() {
     /**
@@ -179,11 +180,14 @@ void SocketBase::connect_client() {
     /**
      * So that we can re-bind to it without TIME_WAIT problems 
      */
-    int reuse_addr = 1;
+    int ra = 1;
+    int rc = setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &ra, sizeof(ra));
     
-    setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
+    if(rc == -1) {
+        throw SocketException("setsockopt failed: %s", strerror(errno));
+    }
     
-    setnonblocking(m_socket);
+    set_blocking(m_socket, false);
     
     m_host = gethostbyname(m_hostname.c_str());
     
@@ -209,7 +213,7 @@ void SocketBase::connect_client() {
      */
     if(m_type == SOCK_STREAM) {
         if(::connect(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
-            if(errno == EINPROGRESS) {
+            /*if(errno == EINPROGRESS) {
                 FD_ZERO(&m_active_fd_set);
                 FD_SET(m_socket, &m_active_fd_set);
 
@@ -225,7 +229,10 @@ void SocketBase::connect_client() {
             }
             else {
                 throw SocketException("connect failed: %s", strerror(errno));
-            }
+            }*/
+        }
+        else {
+            throw SocketException("connect failed: %s", strerror(errno));
         }
     }
 
@@ -239,24 +246,42 @@ void SocketBase::connect_client() {
 /**
  *
  */
-void SocketBase::setnonblocking(int socket) {
-    int opts = fcntl(socket, F_GETFL);
-    
-    if (opts == -1) {
-        throw SocketException("fcntl(F_GETFL): %s", strerror(errno));
+bool SocketBase::ready(const uint32_t& events) {
+
+    if(!(m_pfd.events & events)) {
+        return false;
     }
     
-    opts |= O_NONBLOCK;
-    
-    if (fcntl(socket, F_SETFL, opts) == -1) {
-        throw SocketException("fcntl(F_SETFL): %s", strerror(errno));
-    }
+    return true;
 }
 
 /**
  *
  */
-void SocketBase::setblocking() {
+bool SocketBase::set_blocking(int fd, bool blocking = true) {
 
+    if(fd < 0) {
+        return false;
+    }
+    
+    uint32_t rc = -1;
+
+#ifdef __WIN
+    uint32_t mode = blocking ? 0 : 1;
+             rc   = ioctlsocket(fd, FIONBIO, &mode)
+
+#else
+    int32_t flags = fcntl(fd, F_GETFL, 0);
+    
+    if(flags < 0) {
+        return false;
+    }
+    
+    flags = (blocking ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK));
+    rc    = fcntl(fd, F_SETFL, flags);
+
+#endif
+    
+    return (rc == 0 ? true : false);
 }
 

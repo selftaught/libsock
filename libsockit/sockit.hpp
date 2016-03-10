@@ -59,6 +59,8 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <poll.h>
+
 #endif
 
 /**
@@ -234,13 +236,9 @@ protected:
     SERVICE_TYPE m_service_type;
     
     /**
-     * File descriptor sets used for the
-     * non-blocking implementation.
+     *
      */
-    fd_set m_active_fd_set;
-    fd_set m_read_fd_set;
-    
-    struct timeval m_time;
+    struct pollfd m_pfd;
     
     /**
      * If the current system is *nix or apple
@@ -287,8 +285,8 @@ public:
         m_backlog(5),
         m_buf_size(buf_size),
         m_service_type(SERVER) {
-            m_time.tv_sec  = DEFAULT_TV_SEC;
-            m_time.tv_usec = DEFAULT_TV_USEC;
+            //m_time.tv_sec  = DEFAULT_TV_SEC;
+            //m_time.tv_usec = DEFAULT_TV_USEC;
         }
     
     SocketBase(const uint16_t& port, const int& type, uint16_t buf_size):
@@ -299,8 +297,8 @@ public:
         m_backlog(5),
         m_buf_size(buf_size),
         m_service_type(SERVER) {
-            m_time.tv_sec  = DEFAULT_TV_SEC;
-            m_time.tv_usec = DEFAULT_TV_USEC;
+            //m_time.tv_sec  = DEFAULT_TV_SEC;
+            //m_time.tv_usec = DEFAULT_TV_USEC;
         }
     
     SocketBase(const std::string& hostname, const uint16_t& port, const int& type, uint16_t buf_size):
@@ -312,8 +310,8 @@ public:
         m_backlog(5),
         m_buf_size(buf_size),
         m_service_type(CLIENT) {
-            m_time.tv_sec  = DEFAULT_TV_SEC;
-            m_time.tv_usec = DEFAULT_TV_USEC;
+            //m_time.tv_sec  = DEFAULT_TV_SEC;
+            //m_time.tv_usec = DEFAULT_TV_USEC;
         }
     
     SocketBase(const std::string&, const int&, uint16_t);
@@ -329,8 +327,9 @@ public:
      */
     void disconnect();
     void connect();
-    void setnonblocking(int);
-    void setblocking();
+    
+    bool ready(const uint32_t&);
+    bool set_blocking(int, bool);
     
     virtual void send(const std::string&) = 0;
     virtual std::string receive() = 0;
@@ -367,7 +366,7 @@ public:
     }
     
     void set_ipv6() {
-        m_ip_version =V6;
+        m_ip_version = V6;
     }
     
     /**
