@@ -270,7 +270,7 @@ public:
     Socket(const uint16_t& port):
 		m_socket(DEFAULT_SOCKET_VAL),
         m_port(port),
-        m_af(AF_INET),
+        m_af(AF_UNSPEC),
         m_backlog(5)
     { }
 
@@ -278,12 +278,17 @@ public:
 		m_socket(DEFAULT_SOCKET_VAL),
         m_hostname(hostname),
         m_port(port),
-        m_af(AF_INET),
+        m_af(AF_UNSPEC),
         m_backlog(5)
     { }
     
-    Socket(const std::string&, uint16_t);
-    Socket(const std::string&, const std::string&, uint16_t);
+    Socket(const std::string& hostname, const std::string& port):
+        m_socket(DEFAULT_SOCKET_VAL),
+        m_hostname(hostname),
+        m_port(std::stoi(port)),
+        m_af(AF_UNSPEC),
+        m_backlog(5)
+    { }
     
     /**
      * Destructor.
@@ -321,25 +326,6 @@ public:
         return m_pfd;
     }
 };
-
-template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-Socket<socket_t, service_t>::Socket(const std::string& port, uint16_t buf_size) {
-    m_socket	   = DEFAULT_SOCKET_VAL;
-    m_port         = atoi(port.c_str());
-    m_af           = AF_UNSPEC;
-    m_backlog      = 5;
-    m_buf_size     = buf_size;
-}
-
-template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-Socket<socket_t, service_t>::Socket(const std::string& hostname, const std::string& port, uint16_t buf_size) {
-    m_socket	   = DEFAULT_SOCKET_VAL;
-    m_hostname     = hostname;
-    m_port         = atoi(port.c_str());
-    m_af           = AF_UNSPEC;
-    m_backlog      = 5;
-    m_buf_size     = buf_size;
-}
 
 template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
 Socket<socket_t, service_t>::~Socket() {
