@@ -8,16 +8,7 @@
 
 #include "sockit.hpp"
 
-/**
- * Signal capturing function
- */
-void signal_callback_handler(int signum) {
-    LOG(FATAL) << "Caught signal: " << signum;
-}
-
 int main(int argc, char** argv) {
-    
-    signal(SIGABRT, signal_callback_handler);
     
     Socket<UDP, SERVER>* socket = new Socket<UDP, SERVER>(10001);
     
@@ -26,6 +17,8 @@ int main(int argc, char** argv) {
     }
     catch(SocketException e) {
         LOG(FATAL) << e.what();
+        delete socket;
+        return EXIT_FAILURE;
     }
 
     while(true) {
@@ -52,12 +45,15 @@ int main(int argc, char** argv) {
                 }
                 catch(SocketException e) {
                     std::cout << e.what() << std::endl;
+                    break;
                 }
             }
         }
         
         sleep(1);   
     }
+    
+    delete socket;
     
     return EXIT_SUCCESS;
 }

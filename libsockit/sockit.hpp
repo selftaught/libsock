@@ -221,21 +221,11 @@ protected:
      * Address family.
      */
     int m_af;
-    
-    /**
-     * See the SOCKET_TYPE enum above for options.
-     */
-    SOCKET_TYPE m_type;
 
     /**
      * Maximum backlog size.
      */
     int m_backlog;
-    
-    /**
-     * Service type (SYSTEM_TYPE::CLIENT or SYSTEM_TYPE::SERVER)
-     */
-    SERVICE_TYPE m_service_type;
     
     /**
      *
@@ -281,9 +271,7 @@ public:
 		m_socket(DEFAULT_SOCKET_VAL),
         m_port(port),
         m_af(AF_INET),
-        m_type(socket_t),
-        m_backlog(5),
-        m_service_type(service_t)
+        m_backlog(5)
     { }
 
     Socket(const std::string& hostname, const uint16_t& port):
@@ -291,9 +279,7 @@ public:
         m_hostname(hostname),
         m_port(port),
         m_af(AF_INET),
-        m_type(socket_t),
-        m_backlog(5),
-        m_service_type(service_t)
+        m_backlog(5)
     { }
     
     Socket(const std::string&, uint16_t);
@@ -341,10 +327,8 @@ Socket<socket_t, service_t>::Socket(const std::string& port, uint16_t buf_size) 
     m_socket	   = DEFAULT_SOCKET_VAL;
     m_port         = atoi(port.c_str());
     m_af           = AF_UNSPEC;
-    m_type         = socket_t;
     m_backlog      = 5;
     m_buf_size     = buf_size;
-    m_service_type = service_t;
 }
 
 template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
@@ -353,10 +337,8 @@ Socket<socket_t, service_t>::Socket(const std::string& hostname, const std::stri
     m_hostname     = hostname;
     m_port         = atoi(port.c_str());
     m_af           = AF_UNSPEC;
-    m_type         = socket_t;
     m_backlog      = 5;
     m_buf_size     = buf_size;
-    m_service_type = service_t;
 }
 
 template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
@@ -379,7 +361,7 @@ void Socket<socket_t, service_t>::connect() {
     /**
      * TCP specific declarations
      */
-    if(m_type == TCP) {
+    if(socket_t == TCP) {
         
         LOG(INFO) << "setting TCP recv buffer len to " << TCP_RECV_BUF_LEN;
         
@@ -388,22 +370,22 @@ void Socket<socket_t, service_t>::connect() {
     /**
      * UDP specific declarations
      */
-    else if(m_type == UDP) {
+    else if(socket_t == UDP) {
         
         LOG(INFO) << "setting UDP recv buffer len to " << UDP_RECV_BUF_LEN;
         
         m_buf_size = UDP_RECV_BUF_LEN;
     }
     
-    if(m_service_type == UNDEF) {
+    if(service_t == UNDEF) {
         
         LOG(FATAL) << "service_type_not_specified";
         
         throw SocketException("service_type_not_specified");
     }
     
-         if(m_service_type == SERVER) { connect_server(); }
-    else if(m_service_type == CLIENT) { connect_client(); }
+         if(service_t == SERVER) { connect_server(); }
+    else if(service_t == CLIENT) { connect_client(); }
     else {
         
         LOG(FATAL) << "invalid_service_type";
@@ -452,7 +434,7 @@ void Socket<socket_t, service_t>::connect_server() {
     LOG(INFO) << "Connecting server socket on port " << m_port;
     
 #if defined(__NIX)
-    m_socket = socket(m_af, m_type, IPPROTO(m_type));
+    m_socket = socket(m_af, socket_t, IPPROTO(socket_t));
     
     /**
      * Throw an exception if the socket connection failed.
@@ -486,7 +468,7 @@ void Socket<socket_t, service_t>::connect_server() {
      * If this is a TCP server then we need to
      * put the socket in listening mode.
      */
-    if(m_type == SOCK_STREAM) {
+    if(socket_t == TCP) {
         listen(m_socket, m_backlog);
     }
     
@@ -544,7 +526,7 @@ void Socket<socket_t, service_t>::connect_client() {
     }
     
 #if defined(__NIX)
-    m_socket = socket(m_af, m_type, IPPROTO(m_type));
+    m_socket = socket(m_af, socket_t, IPPROTO(socket_t));
     
     if(m_socket == -1) {
         throw SocketException("socket_failed: %s", strerror(errno));
@@ -584,7 +566,7 @@ void Socket<socket_t, service_t>::connect_client() {
     /**
      * TCP
      */
-    if(m_type == TCP) {
+    if(socket_t == TCP) {
         if(::connect(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
             /*if(errno == EINPROGRESS) {
              FD_ZERO(&m_active_fd_set);
@@ -608,7 +590,7 @@ void Socket<socket_t, service_t>::connect_client() {
             throw SocketException("connect failed: %s", strerror(errno));
         }
     }
-    else if(m_type == UDP) {
+    else if(socket_t == UDP) {
         socklen_t sock_size = sizeof(struct sockaddr*);
         
         if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sock_size) == -1) {
@@ -678,8 +660,8 @@ std::string Socket<socket_t, service_t>::receive() {
     
 #if defined(__NIX)
     
-    if(m_type == TCP) {
-        if(m_service_type == SERVER) {
+    if(socket_t == TCP) {
+        if(service_t == SERVER) {
             int tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
             
             if(tcp_socket == -1) {
@@ -692,7 +674,9 @@ std::string Socket<socket_t, service_t>::receive() {
                 throw SocketException("read_failed: %s", strerror(errno));
             }
         }
-        
+        /**
+         * CLIENT
+         */
         else {            
             if(read(m_socket, buffer, m_buf_size) == -1) {
                 close(m_socket);
@@ -700,10 +684,18 @@ std::string Socket<socket_t, service_t>::receive() {
             }
         }
     }
-    else if(m_type == UDP) {
-        if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_sockaddr, &sock_size) == -1) {
-            close(m_socket);
-            throw SocketException("recvfrom_failed: %s", strerror(errno));
+    else if(socket_t == UDP) {
+        if(service_t == SERVER) {
+            if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_sockaddr, &sock_size) == -1) {
+                close(m_socket);
+                throw SocketException("recvfrom_failed: %s", strerror(errno));
+            }
+        }
+        /**
+         * CLIENT
+         */
+        else {
+            
         }
     }
 #else
@@ -726,7 +718,7 @@ ssize_t Socket<socket_t, service_t>::send(const std::string& message) {
     ssize_t bytes_sent = 0;
     
 #if defined(__NIX)
-    if(m_type == TCP) {
+    if(socket_t == TCP) {
         /*int socket = (m_service_type == SERVER ? m_socket_tcp : m_socket);
         
         if(socket == -1) {
@@ -739,7 +731,7 @@ ssize_t Socket<socket_t, service_t>::send(const std::string& message) {
             throw SocketException("write_failed: %s", strerror(errno));
         }*/
     }
-    else if(m_type == UDP) {
+    else if(socket_t == UDP) {
         
     }
 #else
