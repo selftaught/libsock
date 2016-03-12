@@ -10,9 +10,6 @@
 		81085CF51C74E6F5006860F3 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 81085CF31C74E6F5006860F3 /* Makefile */; };
 		81085CF61C74E6F5006860F3 /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 81085CF41C74E6F5006860F3 /* README.md */; };
 		B16242C21C6ECCBF00B23D6C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B16242BA1C6ECCBF00B23D6C /* main.cpp */; };
-		B16242C31C6ECCBF00B23D6C /* socket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B16242BC1C6ECCBF00B23D6C /* socket.cpp */; };
-		B16242C41C6ECCBF00B23D6C /* tcp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B16242BE1C6ECCBF00B23D6C /* tcp.cpp */; };
-		B16242C51C6ECCBF00B23D6C /* udp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B16242C01C6ECCBF00B23D6C /* udp.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -30,16 +27,9 @@
 /* Begin PBXFileReference section */
 		81085CF31C74E6F5006860F3 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = SOURCE_ROOT; };
 		81085CF41C74E6F5006860F3 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
-		B13259D31C7595F7009293A9 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		B112C8DE1C9254FE00AA0240 /* sockit.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = sockit.hpp; sourceTree = "<group>"; };
 		B16242B01C6ECC8F00B23D6C /* libsockit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = libsockit; sourceTree = BUILT_PRODUCTS_DIR; };
 		B16242BA1C6ECCBF00B23D6C /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		B16242BB1C6ECCBF00B23D6C /* main.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = main.hpp; sourceTree = "<group>"; };
-		B16242BC1C6ECCBF00B23D6C /* socket.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = socket.cpp; sourceTree = "<group>"; };
-		B16242BD1C6ECCBF00B23D6C /* socket.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = socket.hpp; sourceTree = "<group>"; };
-		B16242BE1C6ECCBF00B23D6C /* tcp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tcp.cpp; sourceTree = "<group>"; };
-		B16242BF1C6ECCBF00B23D6C /* tcp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = tcp.hpp; sourceTree = "<group>"; };
-		B16242C01C6ECCBF00B23D6C /* udp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = udp.cpp; sourceTree = "<group>"; };
-		B16242C11C6ECCBF00B23D6C /* udp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = udp.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,17 +62,10 @@
 		B16242B21C6ECC8F00B23D6C /* libsockit */ = {
 			isa = PBXGroup;
 			children = (
-				B13259D31C7595F7009293A9 /* CMakeLists.txt */,
 				81085CF31C74E6F5006860F3 /* Makefile */,
 				81085CF41C74E6F5006860F3 /* README.md */,
 				B16242BA1C6ECCBF00B23D6C /* main.cpp */,
-				B16242BB1C6ECCBF00B23D6C /* main.hpp */,
-				B16242BC1C6ECCBF00B23D6C /* socket.cpp */,
-				B16242BD1C6ECCBF00B23D6C /* socket.hpp */,
-				B16242BE1C6ECCBF00B23D6C /* tcp.cpp */,
-				B16242BF1C6ECCBF00B23D6C /* tcp.hpp */,
-				B16242C01C6ECCBF00B23D6C /* udp.cpp */,
-				B16242C11C6ECCBF00B23D6C /* udp.hpp */,
+				B112C8DE1C9254FE00AA0240 /* sockit.hpp */,
 			);
 			path = libsockit;
 			sourceTree = "<group>";
@@ -144,9 +127,6 @@
 			files = (
 				81085CF61C74E6F5006860F3 /* README.md in Sources */,
 				81085CF51C74E6F5006860F3 /* Makefile in Sources */,
-				B16242C41C6ECCBF00B23D6C /* tcp.cpp in Sources */,
-				B16242C51C6ECCBF00B23D6C /* udp.cpp in Sources */,
-				B16242C31C6ECCBF00B23D6C /* socket.cpp in Sources */,
 				B16242C21C6ECCBF00B23D6C /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

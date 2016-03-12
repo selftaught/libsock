@@ -8,14 +8,29 @@
 
 #include "sockit.hpp"
 
+/**
+ * Signal capturing function
+ */
+void signal_callback_handler(int signum) {
+    LOG(FATAL) << "Caught signal: " << signum;
+}
+
 int main(int argc, char** argv) {
     
-    Socket<TCP, SERVER>* socket = new Socket<TCP, SERVER>(9999);
-    socket->connect();
+    signal(SIGABRT, signal_callback_handler);
+    
+    Socket<UDP, SERVER>* socket = new Socket<UDP, SERVER>(10001);
+    
+    try {
+        socket->connect();
+    }
+    catch(SocketException e) {
+        LOG(FATAL) << e.what();
+    }
 
     while(true) {
         
-        int e = poll(socket->pfd(), 1, 10000);
+        int e = poll(socket->pfd(), 1, 0);
         
         switch(e) {
             case POLL_EXPIRE: {
@@ -25,7 +40,6 @@ int main(int argc, char** argv) {
                 
             case POLL_ERR: {
                 //std::cout << std::strerror(errno) << std::endl;
-                break;
             }
                 
             default: {
@@ -33,17 +47,16 @@ int main(int argc, char** argv) {
                     std::string received = socket->receive();
                     
                     if(!received.empty()) {
-                        std::cout << received << std::endl;
+                        LOG(INFO) << "received " << received.length() << " bytes";
                     }
                 }
                 catch(SocketException e) {
                     std::cout << e.what() << std::endl;
-                    break;
                 }
             }
         }
         
-        sleep(1);
+        sleep(1);   
     }
     
     return EXIT_SUCCESS;
