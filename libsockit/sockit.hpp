@@ -110,11 +110,6 @@ enum SOCKET_TYPE {
     RDM = SOCK_RDM
 };
 
-enum IP {
-    V4,
-    V6
-};
-
 /**
  * Define the default socket value. This is done because without
  * it, we'd have to add preprocessor conditions to each constructor
@@ -201,11 +196,6 @@ class Socket {
 protected:
     
     /**
-     * IP version.
-     */
-    IP m_ip_version;
-    
-    /**
      * Hostname to connect to.
      */
     std::string m_hostname;
@@ -222,8 +212,10 @@ protected:
     
     /**
      * Structure where connection info will be stored.
+     * @TODO: implement ipv6 support.
      */
     struct sockaddr_in m_sockaddr;
+
     
     /**
      * Address family.
@@ -256,11 +248,9 @@ protected:
 #if defined(__NIX)
     
     /**
-     * Socket file descriptors. 
-     * m_socket_tcp is only for the TCP server socket.
+     * Socket file descriptor.
      */
     int m_socket;
-    int m_socket_tcp;
 
     struct hostent* m_host;
 
@@ -321,12 +311,13 @@ public:
     void init();
     void disconnect();
     void connect();
-    void send(const std::string&);
     
     bool ready(const uint32_t&);
     bool set_blocking(int, bool blocking = false);
     
     std::string receive();
+    
+    ssize_t send(const std::string&);
     
     /**
      * Setters
@@ -336,9 +327,7 @@ public:
     void set_port          (const std::string& port    ) { m_port       = atoi(port.c_str()); }
     void set_address_family(const int        & addrf   ) { m_af         = addrf;              }
     void set_backlog       (const uint32_t   & backlog ) { m_backlog    = backlog;            }
-    void set_ipv4          (                           ) { m_ip_version = V4;                 }
-    void set_ipv6          (                           ) { m_ip_version = V6;                 }
-    
+
     /**
      *
      */
@@ -351,7 +340,7 @@ template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
 Socket<socket_t, service_t>::Socket(const std::string& port, uint16_t buf_size) {
     m_socket	   = DEFAULT_SOCKET_VAL;
     m_port         = atoi(port.c_str());
-    m_af           = AF_INET;
+    m_af           = AF_UNSPEC;
     m_type         = socket_t;
     m_backlog      = 5;
     m_buf_size     = buf_size;
@@ -363,7 +352,7 @@ Socket<socket_t, service_t>::Socket(const std::string& hostname, const std::stri
     m_socket	   = DEFAULT_SOCKET_VAL;
     m_hostname     = hostname;
     m_port         = atoi(port.c_str());
-    m_af           = AF_INET;
+    m_af           = AF_UNSPEC;
     m_type         = socket_t;
     m_backlog      = 5;
     m_buf_size     = buf_size;
@@ -639,7 +628,6 @@ void Socket<socket_t, service_t>::connect_client() {
  */
 template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
 bool Socket<socket_t, service_t>::ready(const uint32_t& events) {
-    
     if(!(m_pfd[ 0 ].events & events)) {
         return false;
     }
@@ -661,7 +649,7 @@ bool Socket<socket_t, service_t>::set_blocking(int fd, bool blocking) {
     
 #ifdef __WIN
     uint32_t mode = blocking ? 0 : 1;
-    rc   = ioctlsocket(fd, FIONBIO, &mode)
+             rc   = ioctlsocket(fd, FIONBIO, &mode)
     
 #else
     int32_t flags = fcntl(fd, F_GETFL, 0);
@@ -692,15 +680,15 @@ std::string Socket<socket_t, service_t>::receive() {
     
     if(m_type == TCP) {
         if(m_service_type == SERVER) {
-            m_socket_tcp = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
+            int tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
             
-            if(m_socket_tcp == -1) {
-                close(m_socket_tcp);
+            if(tcp_socket == -1) {
+                close(tcp_socket);
                 throw SocketException("accept_failed: %s", strerror(errno));
             }
             
-            if(read(m_socket_tcp, &buffer, m_buf_size) == -1) {
-                close(m_socket_tcp);
+            if(read(tcp_socket, &buffer, m_buf_size) == -1) {
+                close(tcp_socket);
                 throw SocketException("read_failed: %s", strerror(errno));
             }
         }
@@ -729,42 +717,36 @@ std::string Socket<socket_t, service_t>::receive() {
  *
  */
 template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-void Socket<socket_t, service_t>::send(const std::string& message) {
+ssize_t Socket<socket_t, service_t>::send(const std::string& message) {
     
     if(m_socket == -1) {
         throw SocketException("socket_not_established");
     }
     
+    ssize_t bytes_sent = 0;
+    
 #if defined(__NIX)
     if(m_type == TCP) {
-        int socket = (m_service_type == SERVER ? m_socket_tcp : m_socket);
+        /*int socket = (m_service_type == SERVER ? m_socket_tcp : m_socket);
         
         if(socket == -1) {
             throw SocketException("socket_not_established");
         }
         
-        size_t n = write(socket, message.c_str(), message.size());
+        bytes_sent = write(socket, message.c_str(), message.size());
         
-        if(n == -1) {
+        if(bytes_sent == -1) {
             throw SocketException("write_failed: %s", strerror(errno));
-        }
+        }*/
     }
     else if(m_type == UDP) {
-        char buffer[ m_buf_size ];
         
-        memset(buffer, 0, m_buf_size);
-        
-        socklen_t sock_len = sizeof(struct sockaddr_in);
-        ssize_t n          = recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_sockaddr, &sock_len);
-        
-        if(n == -1) {
-            close(m_socket);
-            throw SocketException("recvfrom_failed: %s", strerror(errno));
-        }
     }
 #else
     
 #endif
+    
+    return bytes_sent;
 }
 
 #endif
