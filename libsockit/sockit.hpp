@@ -270,7 +270,7 @@ public:
     Socket(const uint16_t& port):
 		m_socket(DEFAULT_SOCKET_VAL),
         m_port(port),
-        m_af(AF_UNSPEC),
+        m_af(AF_INET), // @TODO add support for ipv6
         m_backlog(5)
     { }
 
@@ -278,7 +278,7 @@ public:
 		m_socket(DEFAULT_SOCKET_VAL),
         m_hostname(hostname),
         m_port(port),
-        m_af(AF_UNSPEC),
+        m_af(AF_INET), // @TODO add support for ipv6
         m_backlog(5)
     { }
     
@@ -286,7 +286,7 @@ public:
         m_socket(DEFAULT_SOCKET_VAL),
         m_hostname(hostname),
         m_port(std::stoi(port)),
-        m_af(AF_UNSPEC),
+        m_af(AF_INET), // @TODO add support for ipv6
         m_backlog(5)
     { }
     
@@ -417,7 +417,7 @@ void Socket<socket_t, service_t>::connect_server() {
         throw SocketException("port_not_defined");
     }
     
-    LOG(INFO) << "Connecting server socket on port " << m_port;
+    LOG(INFO) << "Connecting server socket";
     
 #if defined(__NIX)
     m_socket = socket(m_af, socket_t, IPPROTO(socket_t));
@@ -441,6 +441,8 @@ void Socket<socket_t, service_t>::connect_server() {
     m_sockaddr.sin_family      = m_af;
     m_sockaddr.sin_addr.s_addr = INADDR_ANY;
     m_sockaddr.sin_port        = htons(m_port);
+    
+    LOG(INFO) << "binding to port " << m_port;
     
     /**
      * If binding fails, throw an exception.

@@ -1,16 +1,9 @@
-//
-//  main.cpp
-//  libsockit
-//
-//  Created by Dillan Hildebrand on 3/10/16.
-//
-//
 
-#include "sockit.hpp"
+#include "main.hpp"
+#include "../libsockit/sockit.hpp"
 
-int main(int argc, char** argv) {
-    
-    Socket<UDP, SERVER>* socket = new Socket<UDP, SERVER>(10001);
+void tcp_server_example() {
+    Socket<TCP, SERVER>* socket = new Socket<TCP, SERVER>(10001);
     
     try {
         socket->connect();
@@ -20,7 +13,7 @@ int main(int argc, char** argv) {
         delete socket;
         return EXIT_FAILURE;
     }
-
+    
     while(true) {
         
         int e = poll(socket->pfd(), 1, 0);
@@ -50,10 +43,8 @@ int main(int argc, char** argv) {
             }
         }
         
-        sleep(1);   
+        sleep(1);
     }
     
     delete socket;
-    
-    return EXIT_SUCCESS;
 }
