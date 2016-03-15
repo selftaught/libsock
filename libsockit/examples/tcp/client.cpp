@@ -1,22 +1,20 @@
 
-#include "main.hpp"
-#include "../libsockit/sockit.hpp"
+#include "../main.hpp"
 
-void tcp_server_example() {
-    Socket<TCP, SERVER>* socket = new Socket<TCP, SERVER>(10001);
+void udp_client_example() {
+    Socket<TCP, CLIENT> socket(10001);
     
     try {
-        socket->connect();
+        socket.connect();
     }
     catch(SocketException e) {
         LOG(FATAL) << e.what();
-        delete socket;
-        return EXIT_FAILURE;
+        return;
     }
     
     while(true) {
         
-        int e = poll(socket->pfd(), 1, 0);
+        int e = poll(socket.pfd(), 1, 0);
         
         switch(e) {
             case POLL_EXPIRE: {
@@ -30,7 +28,7 @@ void tcp_server_example() {
                 
             default: {
                 try {
-                    std::string received = socket->receive();
+                    std::string received = socket.receive();
                     
                     if(!received.empty()) {
                         LOG(INFO) << "received " << received.length() << " bytes";
@@ -45,6 +43,4 @@ void tcp_server_example() {
         
         sleep(1);
     }
-    
-    delete socket;
 }
