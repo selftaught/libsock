@@ -2,6 +2,7 @@
 #ifndef __main_h
 #define __main_h
 
+#include "../easylogging++.h"
 #include "../sockit.hpp"
 
 #include "udp/client.hpp"

@@ -1,7 +1,7 @@
 
 #include "../main.hpp"
 
-void udp_client_example() {
+void tcp_client_example() {
     Socket<TCP, CLIENT> socket(10001);
     
     try {

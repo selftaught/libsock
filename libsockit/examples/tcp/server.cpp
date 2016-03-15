@@ -32,6 +32,7 @@ void tcp_server_example() {
                     
                     if(!received.empty()) {
                         LOG(INFO) << "received " << received.length() << " bytes";
+                        socket.send("<html><body><h1>test</h1></body></html>");
                     }
                 }
                 catch(SocketException e) {

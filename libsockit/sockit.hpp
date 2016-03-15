@@ -2,9 +2,9 @@
 #ifndef __sockit_h
 #define __sockit_h
 
-#include "easylogging++.h"
+//#include "easylogging++.h"
 
-INITIALIZE_EASYLOGGINGPP
+//INITIALIZE_EASYLOGGINGPP
 
 /**
  * Cross platform header files
@@ -241,6 +241,7 @@ protected:
      * Socket file descriptor.
      */
     int m_socket;
+    int m_tcp_client_socket;
 
     struct hostent* m_host;
 
@@ -308,7 +309,7 @@ public:
     
     std::string receive();
     
-    ssize_t send(const std::string&);
+    ssize_t send(const std::string&, bool OOB = false);
     
     /**
      * Setters
@@ -348,34 +349,22 @@ void Socket<socket_t, service_t>::connect() {
      * TCP specific declarations
      */
     if(socket_t == TCP) {
-        
-        LOG(INFO) << "setting TCP recv buffer len to " << TCP_RECV_BUF_LEN;
-        
-        m_buf_size = TCP_RECV_BUF_LEN;
+       m_buf_size = TCP_RECV_BUF_LEN;
     }
     /**
      * UDP specific declarations
      */
     else if(socket_t == UDP) {
-        
-        LOG(INFO) << "setting UDP recv buffer len to " << UDP_RECV_BUF_LEN;
-        
         m_buf_size = UDP_RECV_BUF_LEN;
     }
     
     if(service_t == UNDEF) {
-        
-        LOG(FATAL) << "service_type_not_specified";
-        
         throw SocketException("service_type_not_specified");
     }
     
          if(service_t == SERVER) { connect_server(); }
     else if(service_t == CLIENT) { connect_client(); }
     else {
-        
-        LOG(FATAL) << "invalid_service_type";
-        
         throw SocketException("invalid_service_type");
     }
     
@@ -388,8 +377,6 @@ void Socket<socket_t, service_t>::connect() {
  */
 template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
 void Socket<socket_t, service_t>::disconnect() {
-    
-    LOG(INFO) << "disconnecting";
     
 #if defined(__NIX)
     if(m_socket != -1) {
@@ -417,8 +404,6 @@ void Socket<socket_t, service_t>::connect_server() {
         throw SocketException("port_not_defined");
     }
     
-    LOG(INFO) << "Connecting server socket";
-    
 #if defined(__NIX)
     m_socket = socket(m_af, socket_t, IPPROTO(socket_t));
     
@@ -441,8 +426,6 @@ void Socket<socket_t, service_t>::connect_server() {
     m_sockaddr.sin_family      = m_af;
     m_sockaddr.sin_addr.s_addr = INADDR_ANY;
     m_sockaddr.sin_port        = htons(m_port);
-    
-    LOG(INFO) << "binding to port " << m_port;
     
     /**
      * If binding fails, throw an exception.
@@ -650,15 +633,15 @@ std::string Socket<socket_t, service_t>::receive() {
     
     if(socket_t == TCP) {
         if(service_t == SERVER) {
-            int tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
+            m_tcp_client_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
             
-            if(tcp_socket == -1) {
-                close(tcp_socket);
+            if(m_tcp_client_socket == -1) {
+                close(m_tcp_client_socket);
                 throw SocketException("accept_failed: %s", strerror(errno));
             }
             
-            if(read(tcp_socket, &buffer, m_buf_size) == -1) {
-                close(tcp_socket);
+            if(read(m_tcp_client_socket, &buffer, m_buf_size) == -1) {
+                close(m_tcp_client_socket);
                 throw SocketException("read_failed: %s", strerror(errno));
             }
         }
@@ -697,27 +680,27 @@ std::string Socket<socket_t, service_t>::receive() {
  *
  */
 template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-ssize_t Socket<socket_t, service_t>::send(const std::string& message) {
+ssize_t Socket<socket_t, service_t>::send(const std::string& message, bool OOB) {
     
-    if(m_socket == -1) {
-        throw SocketException("socket_not_established");
+    if(service_t == SERVER) {
+        if(m_socket == -1) {
+            throw SocketException("socket_not_established");
+        }
     }
-    
+        
     ssize_t bytes_sent = 0;
     
 #if defined(__NIX)
     if(socket_t == TCP) {
-        /*int socket = (m_service_type == SERVER ? m_socket_tcp : m_socket);
-        
-        if(socket == -1) {
+        if(m_socket == -1) {
             throw SocketException("socket_not_established");
         }
         
-        bytes_sent = write(socket, message.c_str(), message.size());
+        bytes_sent = write(m_socket, message.c_str(), message.size());
         
         if(bytes_sent == -1) {
             throw SocketException("write_failed: %s", strerror(errno));
-        }*/
+        }
     }
     else if(socket_t == UDP) {
         
