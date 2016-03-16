@@ -2,10 +2,6 @@
 #ifndef __sockit_h
 #define __sockit_h
 
-//#include "easylogging++.h"
-
-//INITIALIZE_EASYLOGGINGPP
-
 /**
  * Cross platform header files
  *  <cstdint>   - Is used for int typedefs.
@@ -241,7 +237,7 @@ protected:
      * Socket file descriptor.
      */
     int m_socket;
-    int m_tcp_client_socket;
+    int m_tcpc_socket;
 
     struct hostent* m_host;
 
@@ -359,13 +355,13 @@ void Socket<socket_t, service_t>::connect() {
     }
     
     if(service_t == UNDEF) {
-        throw SocketException("service_type_not_specified");
+        throw SocketException("undefined service type");
     }
     
          if(service_t == SERVER) { connect_server(); }
     else if(service_t == CLIENT) { connect_client(); }
     else {
-        throw SocketException("invalid_service_type");
+        throw SocketException("invalid service type");
     }
     
     m_pfd[ 0 ].fd     = m_socket;
@@ -401,7 +397,7 @@ void Socket<socket_t, service_t>::connect_server() {
      * Throw an exception if the port hasn't be defined by the user.
      */
     if(!m_port) {
-        throw SocketException("port_not_defined");
+        throw SocketException("port not defined");
     }
     
 #if defined(__NIX)
@@ -411,7 +407,7 @@ void Socket<socket_t, service_t>::connect_server() {
      * Throw an exception if the socket connection failed.
      */
     if(m_socket == -1) {
-        throw SocketException("socket_failed: %s", strerror(errno));
+        throw SocketException("socket failed: %s", strerror(errno));
     }
     
     /**
@@ -432,7 +428,7 @@ void Socket<socket_t, service_t>::connect_server() {
      */
     if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
         close(m_socket);
-        throw SocketException("bind_failed: %s", strerror(errno));
+        throw SocketException("bind failed: %s", strerror(errno));
     }
     
     /**
@@ -500,7 +496,7 @@ void Socket<socket_t, service_t>::connect_client() {
     m_socket = socket(m_af, socket_t, IPPROTO(socket_t));
     
     if(m_socket == -1) {
-        throw SocketException("socket_failed: %s", strerror(errno));
+        throw SocketException("socket failed: %s", strerror(errno));
     }
     
     /**
@@ -565,7 +561,7 @@ void Socket<socket_t, service_t>::connect_client() {
         socklen_t sock_size = sizeof(struct sockaddr*);
         
         if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sock_size) == -1) {
-            throw SocketException("bind_failed: ", strerror(errno));
+            throw SocketException("bind failed: ", strerror(errno));
         }
     }
     
@@ -633,16 +629,16 @@ std::string Socket<socket_t, service_t>::receive() {
     
     if(socket_t == TCP) {
         if(service_t == SERVER) {
-            m_tcp_client_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
+            m_tcpc_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
             
-            if(m_tcp_client_socket == -1) {
-                close(m_tcp_client_socket);
-                throw SocketException("accept_failed: %s", strerror(errno));
+            if(m_tcpc_socket == -1) {
+                close(m_tcpc_socket);
+                throw SocketException("accept failed: %s", strerror(errno));
             }
             
-            if(read(m_tcp_client_socket, &buffer, m_buf_size) == -1) {
-                close(m_tcp_client_socket);
-                throw SocketException("read_failed: %s", strerror(errno));
+            if(read(m_tcpc_socket, &buffer, m_buf_size) == -1) {
+                close(m_tcpc_socket);
+                throw SocketException("read failed: %s", strerror(errno));
             }
         }
         /**
@@ -651,7 +647,7 @@ std::string Socket<socket_t, service_t>::receive() {
         else {            
             if(read(m_socket, buffer, m_buf_size) == -1) {
                 close(m_socket);
-                throw SocketException("read_failed: %s", strerror(errno));
+                throw SocketException("read failed: %s", strerror(errno));
             }
         }
     }
@@ -659,7 +655,7 @@ std::string Socket<socket_t, service_t>::receive() {
         if(service_t == SERVER) {
             if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_sockaddr, &sock_size) == -1) {
                 close(m_socket);
-                throw SocketException("recvfrom_failed: %s", strerror(errno));
+                throw SocketException("recvfrom failed: %s", strerror(errno));
             }
         }
         /**
@@ -683,23 +679,23 @@ template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
 ssize_t Socket<socket_t, service_t>::send(const std::string& message, bool OOB) {
     
     if(service_t == SERVER) {
-        if(m_socket == -1) {
-            throw SocketException("socket_not_established");
+        if(m_socket == -1 || (socket_t == TCP && m_tcpc_socket == -1)) {
+            throw SocketException("socket not connected");
         }
     }
-        
+    
     ssize_t bytes_sent = 0;
     
 #if defined(__NIX)
     if(socket_t == TCP) {
         if(m_socket == -1) {
-            throw SocketException("socket_not_established");
+            throw SocketException("socket not connected");
         }
         
         bytes_sent = write(m_socket, message.c_str(), message.size());
         
         if(bytes_sent == -1) {
-            throw SocketException("write_failed: %s", strerror(errno));
+            throw SocketException("write failed: %s", strerror(errno));
         }
     }
     else if(socket_t == UDP) {
