@@ -12,3 +12,4 @@ src/src.vcxproj.user
 src.xcodeproj
 *.swp
 src/*.swp
+examples/bin
