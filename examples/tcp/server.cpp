@@ -1,14 +1,14 @@
 
 #include "../main.hpp"
 
-void tcp_client_example() {
-    Socket<TCP, CLIENT> socket(10001);
+void tcp_server_example() {
+    Socket<TCP, SERVER> socket(10001);
     
     try {
         socket.connect();
     }
     catch(SocketException e) {
-        LOG(FATAL) << e.what();
+        std::cerr << e.what() << std::endl;
         return;
     }
     
@@ -18,12 +18,11 @@ void tcp_client_example() {
         
         switch(e) {
             case POLL_EXPIRE: {
-                //std::cout << "Poll timed out\n";
                 break;
             }
                 
-            case POLL_ERR: {
-                //std::cout << std::strerror(errno) << std::endl;
+            case POLLERR: {
+                
             }
                 
             default: {
@@ -31,7 +30,8 @@ void tcp_client_example() {
                     std::string received = socket.receive();
                     
                     if(!received.empty()) {
-                        LOG(INFO) << "received " << received.length() << " bytes";
+                        std::cout << "received " << received.length() << " bytes\n";
+                        socket.send("<html><body><h1>test</h1></body></html>");
                     }
                 }
                 catch(SocketException e) {
@@ -42,5 +42,5 @@ void tcp_client_example() {
         }
         
         sleep(1);
-    }
+    }    
 }
