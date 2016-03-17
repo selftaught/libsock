@@ -9,7 +9,7 @@
  *  <algorithm> - Is used for std::remove
  *  <cstdarg>   - Is used for va_list in SocketException
  *  <string>    - Is used so VS doesn't bitch when writing a simple line like 'std::cout << string << std::endl;'
- *  <memory>    - Is used for smart pointers.
+ *  <cstring>   - Is used for std::strerror instead of strerror because g++ throws template related errors otherwise. 
  */
 #include <iostream>
 #include <exception>
@@ -17,7 +17,9 @@
 #include <cstdint>
 #include <cstdarg>
 #include <string>
-#include <memory>
+#include <cstring>
+#include <cerrno>
+#include <unistd.h>
 
 /**
  * Make sure __cplusplus is defined because it's value will tell us what version of
@@ -42,6 +44,9 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 
+/**
+ * Window specific includes and preprocessors.
+ */
 #define __WIN 1
 
 #include <WinSock2.h>
@@ -51,6 +56,9 @@
 
 #elif defined(__APPLE__) || defined(__linux__)
 
+/**
+ * Linux / Apple specific includes and preprocessors.
+ */
 #define __NIX 1
 
 #include <sys/types.h>
@@ -85,9 +93,11 @@
 /**
  * Not really neccessary because IPPROTO_TCP and IPPROTO_UDP
  * are both 0 but, meh. This function macro gets used in 
- * Socket::connect_client and Socket::connect_server.
+ * Socket::connect_client and Socket::connect_server. Also,
+ * we typecast TYPE to __socket_type because compilers will
+ * generate comparison warnings.
  */
-#define IPPROTO(TYPE) ((TYPE) == (SOCK_STREAM) ? (IPPROTO_TCP) : (IPPROTO_UDP))
+#define IPPROTO(TYPE) (((__socket_type)TYPE) == (SOCK_STREAM) ? (IPPROTO_TCP) : (IPPROTO_UDP))
 
 /**
  * Enums.
@@ -211,7 +221,6 @@ protected:
      * @TODO: implement ipv6 support.
      */
     struct sockaddr_in m_sockaddr;
-
     
     /**
      * Address family.
@@ -226,7 +235,7 @@ protected:
     /**
      *
      */
-    struct pollfd m_pfd[1];
+    struct pollfd m_pfd[ 1 ];
     
     /**
      * If the current system is *nix or apple
@@ -265,26 +274,26 @@ public:
      * Constructors.
      */
     Socket(const uint16_t& port):
-		m_socket(DEFAULT_SOCKET_VAL),
         m_port(port),
         m_af(AF_INET), // @TODO add support for ipv6
-        m_backlog(5)
+        m_backlog(5),
+		m_socket(DEFAULT_SOCKET_VAL)
     { }
 
     Socket(const std::string& hostname, const uint16_t& port):
-		m_socket(DEFAULT_SOCKET_VAL),
         m_hostname(hostname),
         m_port(port),
         m_af(AF_INET), // @TODO add support for ipv6
-        m_backlog(5)
+        m_backlog(5),
+		m_socket(DEFAULT_SOCKET_VAL)
     { }
     
     Socket(const std::string& hostname, const std::string& port):
-        m_socket(DEFAULT_SOCKET_VAL),
         m_hostname(hostname),
         m_port(std::stoi(port)),
         m_af(AF_INET), // @TODO add support for ipv6
-        m_backlog(5)
+        m_backlog(5),
+        m_socket(DEFAULT_SOCKET_VAL)
     { }
     
     /**
@@ -407,7 +416,7 @@ void Socket<socket_t, service_t>::connect_server() {
      * Throw an exception if the socket connection failed.
      */
     if(m_socket == -1) {
-        throw SocketException("socket failed: %s", strerror(errno));
+        throw SocketException("socket failed: %s", std::strerror(errno));
     }
     
     /**
@@ -428,7 +437,7 @@ void Socket<socket_t, service_t>::connect_server() {
      */
     if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
         close(m_socket);
-        throw SocketException("bind failed: %s", strerror(errno));
+        throw SocketException("bind failed: %s", std::strerror(errno));
     }
     
     /**
@@ -496,7 +505,7 @@ void Socket<socket_t, service_t>::connect_client() {
     m_socket = socket(m_af, socket_t, IPPROTO(socket_t));
     
     if(m_socket == -1) {
-        throw SocketException("socket failed: %s", strerror(errno));
+        throw SocketException("socket failed: %s", std::strerror(errno));
     }
     
     /**
@@ -506,7 +515,7 @@ void Socket<socket_t, service_t>::connect_client() {
     int rc = setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &ra, sizeof(ra));
     
     if(rc == -1) {
-        throw SocketException("setsockopt failed: %s", strerror(errno));
+        throw SocketException("setsockopt failed: %s", std::strerror(errno));
     }
     
     set_blocking(m_socket, false);
@@ -514,7 +523,7 @@ void Socket<socket_t, service_t>::connect_client() {
     m_host = gethostbyname(m_hostname.c_str());
     
     if(m_host == NULL) {
-        throw SocketException("gethostbyname failed: %s", hstrerror(h_errno));
+        throw SocketException("gethostbyname failed: %s", std::strerror(h_errno));
     }
     
     /**
@@ -554,14 +563,14 @@ void Socket<socket_t, service_t>::connect_client() {
              }*/
         }
         else {
-            throw SocketException("connect failed: %s", strerror(errno));
+            throw SocketException("connect failed: %s", std::strerror(errno));
         }
     }
     else if(socket_t == UDP) {
         socklen_t sock_size = sizeof(struct sockaddr*);
         
         if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sock_size) == -1) {
-            throw SocketException("bind failed: ", strerror(errno));
+            throw SocketException("bind failed: ", std::strerror(errno));
         }
     }
     
@@ -633,12 +642,12 @@ std::string Socket<socket_t, service_t>::receive() {
             
             if(m_tcpc_socket == -1) {
                 close(m_tcpc_socket);
-                throw SocketException("accept failed: %s", strerror(errno));
+                throw SocketException("accept failed: %s", std::strerror(errno));
             }
             
             if(read(m_tcpc_socket, &buffer, m_buf_size) == -1) {
                 close(m_tcpc_socket);
-                throw SocketException("read failed: %s", strerror(errno));
+                throw SocketException("read failed: %s", std::strerror(errno));
             }
         }
         /**
@@ -647,7 +656,7 @@ std::string Socket<socket_t, service_t>::receive() {
         else {            
             if(read(m_socket, buffer, m_buf_size) == -1) {
                 close(m_socket);
-                throw SocketException("read failed: %s", strerror(errno));
+                throw SocketException("read failed: %s", std::strerror(errno));
             }
         }
     }
@@ -655,7 +664,7 @@ std::string Socket<socket_t, service_t>::receive() {
         if(service_t == SERVER) {
             if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_sockaddr, &sock_size) == -1) {
                 close(m_socket);
-                throw SocketException("recvfrom failed: %s", strerror(errno));
+                throw SocketException("recvfrom failed: %s", std::strerror(errno));
             }
         }
         /**
@@ -695,7 +704,7 @@ ssize_t Socket<socket_t, service_t>::send(const std::string& message, bool OOB) 
         bytes_sent = write(m_socket, message.c_str(), message.size());
         
         if(bytes_sent == -1) {
-            throw SocketException("write failed: %s", strerror(errno));
+            throw SocketException("write failed: %s", std::strerror(errno));
         }
     }
     else if(socket_t == UDP) {
