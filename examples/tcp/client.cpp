@@ -1,8 +1,8 @@
 
 #include "../main.hpp"
 
-void tcp_client_example() {
-    Socket<TCP, CLIENT> socket(10001);
+void tcp_client_example(const std::string& host, const uint16_t& port) {
+    Socket<TCP, CLIENT> socket(host, port);
     
     try {
         socket.connect();
@@ -13,7 +13,6 @@ void tcp_client_example() {
     }
     
     while(true) {
-        
         int e = poll(socket.pfd(), 1, 0);
         
         switch(e) {

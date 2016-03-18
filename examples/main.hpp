@@ -10,4 +10,6 @@
 #include "tcp/client.hpp"
 #include "tcp/server.hpp"
 
+void help();
+
 #endif

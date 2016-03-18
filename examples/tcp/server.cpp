@@ -1,8 +1,8 @@
 
 #include "../main.hpp"
 
-void tcp_server_example() {
-    Socket<TCP, SERVER> socket(10001);
+void tcp_server_example(const uint16_t& port) {
+    Socket<TCP, SERVER> socket(port);
     
     try {
         socket.connect();
@@ -13,7 +13,6 @@ void tcp_server_example() {
     }
     
     while(true) {
-        
         int e = poll(socket.pfd(), 1, 0);
         
         switch(e) {
@@ -31,7 +30,6 @@ void tcp_server_example() {
                     
                     if(!received.empty()) {
                         std::cout << "received " << received.length() << " bytes\n";
-                        socket.send("<html><body><h1>test</h1></body></html>");
                     }
                 }
                 catch(SocketException e) {
