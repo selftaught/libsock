@@ -1,8 +1,8 @@
 
 #include "../main.hpp"
 
-void tcp_server_example(const uint16_t& port) {
-    Socket<TCP, SERVER> socket(port);
+void tcp_server_example(const uint16_t& port, std::string host) {
+    Socket<TCP, SERVER> socket(host, port);
     
     try {
         socket.connect();
@@ -13,8 +13,8 @@ void tcp_server_example(const uint16_t& port) {
     }
     
     while(true) {
-        int e = poll(socket.pfd(), 1, 0);
-        
+        int e = poll(socket.pfd(), 1, 500);
+
         switch(e) {
             case POLL_EXPIRE: {
                 break;
@@ -30,15 +30,16 @@ void tcp_server_example(const uint16_t& port) {
                     
                     if(!received.empty()) {
                         std::cout << "received " << received.length() << " bytes\n";
+                        std::cout << "message: \n\n" << received << std::endl;
+
+                        socket.send("<html><body><h1>Got it!</h1></body></html>");
                     }
                 }
                 catch(SocketException e) {
-                    std::cout << e.what() << std::endl;
+                    std::cerr << e.what() << std::endl;
                     break;
                 }
             }
         }
-        
-        sleep(1);
     }    
 }

@@ -246,7 +246,7 @@ protected:
      * Socket file descriptor.
      */
     int m_socket;
-    int m_tcpc_socket;
+    int m_tcp_socket;
 
     struct hostent* m_host;
 
@@ -620,7 +620,6 @@ bool Socket<socket_t, service_t>::set_blocking(int fd, bool blocking) {
     rc    = fcntl(fd, F_SETFL, flags);
     
 #endif
-    
     return (rc == 0 ? true : false);
 }
 
@@ -638,15 +637,16 @@ std::string Socket<socket_t, service_t>::receive() {
     
     if(socket_t == TCP) {
         if(service_t == SERVER) {
-            m_tcpc_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
+            std::cout << "accepting...\n";
+            m_tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
             
-            if(m_tcpc_socket == -1) {
-                close(m_tcpc_socket);
+            if(m_tcp_socket == -1) {
+                close(m_tcp_socket);
                 throw SocketException("accept failed: %s", std::strerror(errno));
             }
             
-            if(read(m_tcpc_socket, &buffer, m_buf_size) == -1) {
-                close(m_tcpc_socket);
+            if(read(m_tcp_socket, &buffer, m_buf_size) == -1) {
+                close(m_tcp_socket);
                 throw SocketException("read failed: %s", std::strerror(errno));
             }
         }
@@ -677,7 +677,6 @@ std::string Socket<socket_t, service_t>::receive() {
 #else
     
 #endif
-    
     return std::string(buffer);
 }
 
@@ -686,34 +685,29 @@ std::string Socket<socket_t, service_t>::receive() {
  */
 template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
 ssize_t Socket<socket_t, service_t>::send(const std::string& message, bool OOB) {
-    
     if(service_t == SERVER) {
-        if(m_socket == -1 || (socket_t == TCP && m_tcpc_socket == -1)) {
+        if(m_socket == -1 || (socket_t == TCP && m_tcp_socket == -1)) {
             throw SocketException("socket not connected");
         }
     }
     
     ssize_t bytes_sent = 0;
-    
+    int socket = (socket_t == UDP ? m_socket : m_tcp_socket);    
+
 #if defined(__NIX)
-    if(socket_t == TCP) {
-        if(m_socket == -1) {
-            throw SocketException("socket not connected");
-        }
-        
-        bytes_sent = write(m_socket, message.c_str(), message.size());
-        
-        if(bytes_sent == -1) {
-            throw SocketException("write failed: %s", std::strerror(errno));
-        }
+    bytes_sent = write(socket, message.c_str(), strlen(message.c_str())); 
+
+    if(bytes_sent == -1) {
+       throw SocketException("sendto failed: %s", std::strerror(errno));
     }
-    else if(socket_t == UDP) {
-        
+
+    if(socket_t == TCP) {
+        // Close the TCP child socket otherwise the request will hang.
+        close(m_tcp_socket);
     }
 #else
     
 #endif
-    
     return bytes_sent;
 }
 

@@ -13,7 +13,7 @@ void tcp_client_example(const std::string& host, const uint16_t& port) {
     }
     
     while(true) {
-        int e = poll(socket.pfd(), 1, 0);
+        int e = poll(socket.pfd(), 1, 500);
         
         switch(e) {
             case POLL_EXPIRE: {
@@ -37,7 +37,5 @@ void tcp_client_example(const std::string& host, const uint16_t& port) {
                 }
             }
         }
-        
-        sleep(1);
     }
 }
