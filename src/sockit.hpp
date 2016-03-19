@@ -4,22 +4,18 @@
 
 /**
  * Cross platform header files
- *  <cstdint>   - Is used for int typedefs.
  *  <exception> - Is used for creating our custom socket exception classes.
- *  <algorithm> - Is used for std::remove
+ *  <cstdint>   - Is used for int typedefs.
  *  <cstdarg>   - Is used for va_list in SocketException
  *  <string>    - Is used so VS doesn't bitch when writing a simple line like 'std::cout << string << std::endl;'
  *  <cstring>   - Is used for std::strerror instead of strerror because g++ throws template related errors otherwise. 
  */
 #include <iostream>
 #include <exception>
-#include <algorithm>
 #include <cstdint>
 #include <cstdarg>
 #include <string>
 #include <cstring>
-#include <cerrno>
-#include <unistd.h>
 
 /**
  * Make sure __cplusplus is defined because it's value will tell us what version of
@@ -61,9 +57,14 @@
  */
 #define __NIX 1
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+/**
+ * <sys/socket.h> -
+ * <netdb.h>      - 
+ * <unistd.h>     -
+ * <fcntl.h>      -
+ * <poll.h>       -
+ */
+//#include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
