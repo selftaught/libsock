@@ -335,11 +335,6 @@ public:
 
 template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
 Socket<socket_t, service_t>::~Socket() {
-#if defined(__NIX)
-    
-#else
-    
-#endif
     disconnect();
 }
 
@@ -544,25 +539,6 @@ void Socket<socket_t, service_t>::connect_client() {
      */
     if(socket_t == TCP) {
         if(::connect(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
-            /*if(errno == EINPROGRESS) {
-             FD_ZERO(&m_active_fd_set);
-             FD_SET(m_socket, &m_active_fd_set);
-             
-             if (select(m_socket + 1, NULL, &m_active_fd_set, NULL, &m_time) > 0) {
-             socklen_t lon = sizeof(int);
-             int optval;
-             getsockopt(m_socket, SOL_SOCKET, SO_ERROR, &optval, &lon);
-             
-             if(optval) {
-             throw SocketException("getsockopt failed: %s", strerror(optval));
-             }
-             }
-             }
-             else {
-             throw SocketException("connect failed: %s", strerror(errno));
-             }*/
-        }
-        else {
             throw SocketException("connect failed: %s", std::strerror(errno));
         }
     }
@@ -634,7 +610,6 @@ std::string Socket<socket_t, service_t>::receive() {
     memset(buffer, 0, m_buf_size);
     
 #if defined(__NIX)
-    
     if(socket_t == TCP) {
         if(service_t == SERVER) {
             std::cout << "accepting...\n";
