@@ -1,6 +1,10 @@
 
 #ifndef __sockit_h
 #define __sockit_h
+/**
+ * USEFUL AND INFORMATIVE LINKS:
+ *  http://linux.die.net/man/3/setsockopt - options for setsockopt
+ */
 
 /**
  * Cross platform header files
@@ -345,7 +349,6 @@ Socket<socket_t, service_t>::~Socket() {
  */
 template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
 void Socket<socket_t, service_t>::connect() {
-
     /**
      * TCP specific declarations
      */
@@ -414,7 +417,29 @@ void Socket<socket_t, service_t>::connect_server() {
     if(m_socket == -1) {
         throw SocketException("socket failed: %s", std::strerror(errno));
     }
+
+    /**
+     * @TODO: Implement support and abstraction for setting 
+     *        and getting multiple options. This particular
+     *        option (SO_REUSEADDR) allows forcing binding 
+     *        so we don't have to wait to bind if there's
+     *        already a socket  
+     */
+    const int toggle = 1;
     
+    if(setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (const void*)&toggle, sizeof(toggle)) == -1) {
+        throw SocketException("setsockopt SO_REUSEADDR failed: %s", std::strerror(errno));
+    } 
+
+    /**
+     * SO_REUSEPORT needs to be set if the current linux kernel version is >= 3.9
+     */
+#ifdef SO_REUSEPORT
+    if(setsockopt(m_socket, SOL_SOCKET, SO_REUSEPORT, (const void*)&toggle, sizeof(toggle)) == -1) {
+        throw SocketException("setsockopt SO_REUSEPORT failed: %s", std::strerror(errno));
+    } 
+#endif
+
     /**
      * Set all bytes of m_host to zero. memset() is MT-Safe
      * See: http://man7.org/linux/man-pages/man3/memset.3.html
@@ -519,6 +544,7 @@ void Socket<socket_t, service_t>::connect_client() {
     m_host = gethostbyname(m_hostname.c_str());
     
     if(m_host == NULL) {
+        disconnect();
         throw SocketException("gethostbyname failed: %s", std::strerror(h_errno));
     }
     
@@ -540,6 +566,7 @@ void Socket<socket_t, service_t>::connect_client() {
      */
     if(socket_t == TCP) {
         if(::connect(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
+            disconnect();
             throw SocketException("connect failed: %s", std::strerror(errno));
         }
     }
@@ -547,6 +574,7 @@ void Socket<socket_t, service_t>::connect_client() {
         socklen_t sock_size = sizeof(struct sockaddr*);
         
         if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sock_size) == -1) {
+            disconnect();
             throw SocketException("bind failed: ", std::strerror(errno));
         }
     }
@@ -638,8 +666,8 @@ std::string Socket<socket_t, service_t>::receive() {
     }
     else if(socket_t == UDP) {
         if(service_t == SERVER) {
+            std::cout << "calling recvfrom\n";
             if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_sockaddr, &sock_size) == -1) {
-                close(m_socket);
                 throw SocketException("recvfrom failed: %s", std::strerror(errno));
             }
         }

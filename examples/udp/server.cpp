@@ -32,7 +32,7 @@ void udp_server_example(const uint16_t& port, std::string host) {
                         std::cout << "received " << received.length() << " bytes\n";
                         std::cout << "message: \n\n" << received << std::endl;
 
-                        socket.send("<html><body><h1>Got it!</h1></body></html>");
+                        socket.send("got your message\n");
                     }
                 }
                 catch(SocketException e) {
