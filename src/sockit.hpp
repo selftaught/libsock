@@ -92,7 +92,7 @@
 /**
  * Enums.
  */
-enum SERVICE_TYPE {
+enum PROC_TYPE {
     UNDEF,
     CLIENT,
     SERVER
@@ -193,7 +193,7 @@ protected:
  * This is the class which UdpSocket and TcpSocket are derived from.
  *
  */
-template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 class Socket {
 protected:
     
@@ -342,17 +342,17 @@ public:
 /**
  * Explicitly disconnect during destruction.
  */
-template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-Socket<socket_t, service_t>::~Socket() {
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+Socket<socket_t, proc_t>::~Socket() {
     disconnect();
 }
 
 /**
  * Calls the correct connect function (server or client)
- * based on the value of m_service_type;
+ * based on the value of m_proc_type;
  */
-template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-void Socket<socket_t, service_t>::connect() {
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+void Socket<socket_t, proc_t>::connect() {
     /**
      * TCP specific declarations
      */
@@ -366,12 +366,12 @@ void Socket<socket_t, service_t>::connect() {
         m_buf_size = UDP_RECV_BUF_LEN;
     }
     
-    if(service_t == UNDEF) {
+    if(proc_t == UNDEF) {
         throw SocketException("undefined service type");
     }
     
-         if(service_t == SERVER) { connect_server(); }
-    else if(service_t == CLIENT) { connect_client(); }
+         if(proc_t == SERVER) { connect_server(); }
+    else if(proc_t == CLIENT) { connect_client(); }
     else {
         throw SocketException("invalid service type");
     }
@@ -383,8 +383,8 @@ void Socket<socket_t, service_t>::connect() {
 /**
  * Closes the socket if it's open.
  */
-template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-void Socket<socket_t, service_t>::disconnect() {
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+void Socket<socket_t, proc_t>::disconnect() {
     
 #if defined(__NIX)
     if(m_socket != -1) {
@@ -402,8 +402,8 @@ void Socket<socket_t, service_t>::disconnect() {
 /**
  * Does the needful to setup a server socket.
  */
-template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-void Socket<socket_t, service_t>::connect_server() {
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+void Socket<socket_t, proc_t>::connect_server() {
     
     /**
      * Throw an exception if the port hasn't be defined by the user.
@@ -510,8 +510,8 @@ void Socket<socket_t, service_t>::connect_server() {
 /**
  * Establishes a client connection.
  */
-template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-void Socket<socket_t, service_t>::connect_client() {
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+void Socket<socket_t, proc_t>::connect_client() {
     /**
      * Throw an exception if the port hasn't be defined by the user.
      */
@@ -579,7 +579,7 @@ void Socket<socket_t, service_t>::connect_client() {
         
         if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sock_size) == -1) {
             disconnect();
-            throw SocketException("bind failed: ", std::strerror(errno));
+            throw SocketException("bind failed: %s", std::strerror(errno));
         }
     }
     
@@ -593,8 +593,8 @@ void Socket<socket_t, service_t>::connect_client() {
 /**
  *
  */
-template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-bool Socket<socket_t, service_t>::ready(const uint32_t& events) {
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+bool Socket<socket_t, proc_t>::ready(const uint32_t& events) {
     if(!(m_pfd[ 0 ].events & events)) {
         return false;
     }
@@ -605,8 +605,8 @@ bool Socket<socket_t, service_t>::ready(const uint32_t& events) {
 /**
  *
  */
-template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-bool Socket<socket_t, service_t>::set_blocking(int fd, bool blocking) {
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+bool Socket<socket_t, proc_t>::set_blocking(int fd, bool blocking) {
     
     if(fd < 0) {
         return false;
@@ -635,8 +635,8 @@ bool Socket<socket_t, service_t>::set_blocking(int fd, bool blocking) {
 /**
  *
  */
-template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-std::string Socket<socket_t, service_t>::receive() {
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+std::string Socket<socket_t, proc_t>::receive() {
         
     char buffer[ m_buf_size ];
     socklen_t sock_size = sizeof(struct sockaddr_in);
@@ -650,7 +650,7 @@ std::string Socket<socket_t, service_t>::receive() {
         /**
          * Server 
          */
-        if(service_t == SERVER) {
+        if(proc_t == SERVER) {
             std::cout << "accepting...\n";
             m_tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
             
@@ -681,7 +681,7 @@ std::string Socket<socket_t, service_t>::receive() {
         /**
          * Server 
          */
-        if(service_t == SERVER) {
+        if(proc_t == SERVER) {
             std::cout << "calling recvfrom\n";
             if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_sockaddr, &sock_size) == -1) {
                 throw SocketException("recvfrom failed: %s", std::strerror(errno));
@@ -707,9 +707,9 @@ std::string Socket<socket_t, service_t>::receive() {
 /**
  *
  */
-template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
-ssize_t Socket<socket_t, service_t>::send(const std::string& message, bool OOB) {
-    if(service_t == SERVER) {
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
+    if(proc_t == SERVER) {
         if(m_socket == -1 || (socket_t == TCP && m_tcp_socket == -1)) {
             throw SocketException("socket not connected");
         }
