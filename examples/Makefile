@@ -1,6 +1,6 @@
 CC=g++
 CFLAGS=-std=c++11 -Wall
-EXAMPLE_BIN=bin/examples
+EXAMPLE_BIN=bin/sockit
 EXAMPLE_CPPS=main.cpp tcp/*.cpp udp/*.cpp
 
 all: mkdir_bin examples 
