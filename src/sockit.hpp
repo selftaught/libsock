@@ -1,13 +1,12 @@
 
 #ifndef __sockit_h
 #define __sockit_h
-/**
- * USEFUL AND INFORMATIVE LINKS:
- *  http://linux.die.net/man/3/setsockopt - options for setsockopt
- */
 
 /**
- * Cross platform header files
+ * + USEFUL AND INFORMATIVE LINKS:
+ *  http://linux.die.net/man/3/setsockopt - options for setsockopt
+ *
+ * + Cross platform header files
  *  <exception> - Is used for creating our custom socket exception classes.
  *  <cstdint>   - Is used for int typedefs.
  *  <cstdarg>   - Is used for va_list in SocketException
@@ -30,9 +29,6 @@
  * @source: http://stackoverflow.com/questions/10717502/is-there-a-preprocessor-directive-for-detecting-c11x-support
  */
 #if defined(__cplusplus)
-/**
- * If the
- */
 #if __cplusplus > 199711L
 #define CPP11 1
 #else
@@ -62,13 +58,11 @@
 #define __NIX 1
 
 /**
- * <sys/socket.h> -
- * <netdb.h>      - 
- * <unistd.h>     -
- * <fcntl.h>      -
- * <poll.h>       -
+ * <netdb.h>
+ * <unistd.h>
+ * <fcntl.h>
+ * <poll.h>
  */
-//#include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -94,15 +88,6 @@
  * that can be thrown by SockException.
  */
 #define ERR_BUF_LEN 256
-
-/**
- * Not really neccessary because IPPROTO_TCP and IPPROTO_UDP
- * are both 0 but, meh. This function macro gets used in 
- * Socket::connect_client and Socket::connect_server. Also,
- * we typecast TYPE to __socket_type because compilers will
- * generate comparison warnings.
- */
-#define IPPROTO(TYPE) (((__socket_type)TYPE) == (SOCK_STREAM) ? (IPPROTO_TCP) : (IPPROTO_UDP))
 
 /**
  * Enums.
@@ -171,8 +156,8 @@ public:
     virtual ~SocketException() throw() {}
     
     /**
-     * Need to use std::exception otherwise
-     * g++ will generate warnings: 'hides overloaded virtual function'.
+     * Need to use std::exception::what otherwise
+     * g++ will generate these warnings: 'hides overloaded virtual function'
      */
     using std::exception::what;
 
@@ -244,7 +229,8 @@ protected:
     int m_backlog;
 
     /**
-     * Protocol
+     * Protocol.
+     * See /etc/protocols for some possible values.
      */
     int m_protocol;
     
@@ -254,7 +240,7 @@ protected:
     struct pollfd m_pfd[ 1 ];
     
     /**
-     * If the current system is *nix or apple
+     * If the current system is *nix or darwin
      */
 #if defined(__NIX)
     
@@ -289,29 +275,29 @@ public:
     /**
      * Constructors.
      */
-    Socket(const uint16_t& port):
+    Socket(const uint16_t& port, int protocol = 0):
         m_port(port),
         m_af(AF_INET), // @TODO add support for ipv6
         m_backlog(5),
-        m_protocol(0),
-		m_socket(DEFAULT_SOCKET_VAL)
+        m_protocol(protocol),
+        m_socket(DEFAULT_SOCKET_VAL)
     { }
 
-    Socket(const std::string& hostname, const uint16_t& port):
+    Socket(const std::string& hostname, const uint16_t& port, int protocol = 0):
         m_hostname(hostname),
         m_port(port),
         m_af(AF_INET), // @TODO add support for ipv6
         m_backlog(5),
-        m_protocol(0),
-		m_socket(DEFAULT_SOCKET_VAL)
+        m_protocol(protocol),
+        m_socket(DEFAULT_SOCKET_VAL)
     { }
     
-    Socket(const std::string& hostname, const std::string& port):
+    Socket(const std::string& hostname, const std::string& port, int protocol = 0):
         m_hostname(hostname),
         m_port(std::stoi(port)),
         m_af(AF_INET), // @TODO add support for ipv6
         m_backlog(5),
-        m_protocol(0),
+        m_protocol(protocol),
         m_socket(DEFAULT_SOCKET_VAL)
     { }
     
@@ -321,7 +307,7 @@ public:
     ~Socket();
     
     /**
-     * Prototypes.
+     * Function prototypes.
      */
     
     void init();
@@ -343,6 +329,7 @@ public:
     void set_port          (const std::string& port    ) { m_port       = atoi(port.c_str()); }
     void set_address_family(const int        & addrf   ) { m_af         = addrf;              }
     void set_backlog       (const uint32_t   & backlog ) { m_backlog    = backlog;            }
+    void set_protocol      (const int        & protocol) { m_protocol   = protocol;           }
 
     /**
      *
@@ -352,6 +339,9 @@ public:
     }
 };
 
+/**
+ * Explicitly disconnect during destruction.
+ */
 template<SOCKET_TYPE socket_t, SERVICE_TYPE service_t>
 Socket<socket_t, service_t>::~Socket() {
     disconnect();
@@ -653,7 +643,13 @@ std::string Socket<socket_t, service_t>::receive() {
     memset(buffer, 0, m_buf_size);
     
 #if defined(__NIX)
+    /**
+     * TCP
+     */
     if(socket_t == TCP) {
+        /**
+         * Server 
+         */
         if(service_t == SERVER) {
             std::cout << "accepting...\n";
             m_tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
@@ -669,7 +665,7 @@ std::string Socket<socket_t, service_t>::receive() {
             }
         }
         /**
-         * CLIENT
+         * Client
          */
         else {            
             if(read(m_socket, buffer, m_buf_size) == -1) {
@@ -678,7 +674,13 @@ std::string Socket<socket_t, service_t>::receive() {
             }
         }
     }
+    /**
+     * UDP 
+     */
     else if(socket_t == UDP) {
+        /**
+         * Server 
+         */
         if(service_t == SERVER) {
             std::cout << "calling recvfrom\n";
             if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_sockaddr, &sock_size) == -1) {
@@ -686,14 +688,18 @@ std::string Socket<socket_t, service_t>::receive() {
             }
         }
         /**
-         * CLIENT
+         * Client
          */
         else {
-            
+           /**
+            * @TODO: implement UDP client recv functionality
+            */ 
         }
     }
 #else
-    
+    /**
+     * @TODO: implement send functionality for Windows
+     */
 #endif
     return std::string(buffer);
 }
@@ -724,7 +730,9 @@ ssize_t Socket<socket_t, service_t>::send(const std::string& message, bool OOB) 
         close(m_tcp_socket);
     }
 #else
-    
+    /**
+     * @TODO: implement send functionality for Windows
+     */
 #endif
     return bytes_sent;
 }
