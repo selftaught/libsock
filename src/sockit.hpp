@@ -155,7 +155,7 @@ public:
         this->init(fmt, ap);
         va_end(ap);
     }
-    
+
     /** 
      * Constructor (C++ STL strings).
      * @param message The error message.
@@ -170,6 +170,12 @@ public:
      */
     virtual ~SocketException() throw() {}
     
+    /**
+     * Need to use std::exception otherwise
+     * g++ will generate warnings: 'hides overloaded virtual function'.
+     */
+    using std::exception::what;
+
     /** 
      * Returns a pointer to the (constant) error description.
      * @return A pointer to a const char*. The underlying memory
@@ -236,6 +242,11 @@ protected:
      * Maximum backlog size.
      */
     int m_backlog;
+
+    /**
+     * Protocol
+     */
+    int m_protocol;
     
     /**
      *
@@ -282,6 +293,7 @@ public:
         m_port(port),
         m_af(AF_INET), // @TODO add support for ipv6
         m_backlog(5),
+        m_protocol(0),
 		m_socket(DEFAULT_SOCKET_VAL)
     { }
 
@@ -290,6 +302,7 @@ public:
         m_port(port),
         m_af(AF_INET), // @TODO add support for ipv6
         m_backlog(5),
+        m_protocol(0),
 		m_socket(DEFAULT_SOCKET_VAL)
     { }
     
@@ -298,6 +311,7 @@ public:
         m_port(std::stoi(port)),
         m_af(AF_INET), // @TODO add support for ipv6
         m_backlog(5),
+        m_protocol(0),
         m_socket(DEFAULT_SOCKET_VAL)
     { }
     
@@ -409,7 +423,7 @@ void Socket<socket_t, service_t>::connect_server() {
     }
     
 #if defined(__NIX)
-    m_socket = socket(m_af, socket_t, IPPROTO(socket_t));
+    m_socket = socket(m_af, socket_t, m_protocol);
     
     /**
      * Throw an exception if the socket connection failed.
@@ -483,7 +497,7 @@ void Socket<socket_t, service_t>::connect_server() {
     
     m_hints.ai_family	= m_af;
     m_hints.ai_socktype = m_type;
-    m_hints.ai_protocol = IPPROTO(m_type);
+    m_hints.ai_protocol = m_protocol;
     m_hints.ai_flags	= AI_PASSIVE;
     
     err = getaddrinfo(NULL, std::to_string(m_port).c_str(), &m_hints, &m_result);
@@ -523,7 +537,7 @@ void Socket<socket_t, service_t>::connect_client() {
     }
     
 #if defined(__NIX)
-    m_socket = socket(m_af, socket_t, IPPROTO(socket_t));
+    m_socket = socket(m_af, socket_t, m_protocol);
     
     if(m_socket == -1) {
         throw SocketException("socket failed: %s", std::strerror(errno));
