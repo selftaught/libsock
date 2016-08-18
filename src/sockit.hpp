@@ -1,6 +1,6 @@
 
-#ifndef __sockit_h
-#define __sockit_h
+#ifndef __sockit_hpp
+#define __sockit_hpp
 
 /**
  *          OSI Model                   IP Suite
@@ -33,11 +33,25 @@
  * | pointer   | 32          | 64         |
  * +-----------+-------------+------------+
  *
+ * - PROTOCOLS
+ *      * IPv4   - (32 bit addresses) provides packet delivery service for TCP, UDP, SCTP, ICMP, and IGMP.
+ *      * IPv6   - (128 bit addresses) replacement for IPv4. Provides delivery service for for TCP, UDP, SCTP, and ICMPv6.
+ *      * TCP    - Transmission Control Protocol.
+ *      * UDP    - User Datagram Protocol.
+ *      * SCTP   - Stream Control Transmission Protocol.
+ *      * ICMP   - Internet Control Message Protocol.
+ *      * IGMP   - Internet Group Management Protocol.
+ *      * ARP    - Address Resolution Protocol.
+ *      * RARP   - Reverse Address Resolution Protocol.
+ *      * ICMPv6 - Internet Control Message Protocol version 6.
+ *      * BPF    - BSD Packet Filter.
+ *      * DLPI   - Datalink Provider Interface.
  *
- * + USEFUL AND INFORMATIVE LINKS:
+ *
+ * - USEFUL AND INFORMATIVE LINKS:
  *  http://linux.die.net/man/3/setsockopt - options for setsockopt
  *
- * + Cross platform header files
+ * - Cross platform header files
  *  <exception> - Is used for creating our custom socket exception classes.
  *  <cstdint>   - Is used for int typedefs.
  *  <cstdarg>   - Is used for va_list in SocketException
@@ -144,6 +158,9 @@ enum PROC_TYPE {
     SERVER
 };
 
+/**
+ * Various socket types.
+ */
 enum SOCKET_TYPE {
     TCP = SOCK_STREAM,
     UDP = SOCK_DGRAM,
@@ -449,7 +466,18 @@ void Socket<socket_t, proc_t>::disconnect() {
 }
 
 /**
- * Does the needful to setup a server socket.
+ * Makes a 3-way TCP handshake (Minimum number of packets: 3)
+ *
+ *  1. SERVER: socket(), bind(), listen()
+ *
+ *  2. CLIENT: sends a SYN segment by calling connect which tells the
+ *             server the client's initial sequence number for the data
+ *             which the client will send on the connection.
+ *
+ *  3. SERVER: ACKs the client's SYN and the server sends back it's own
+ *             SYN segment containing the initial sequence number for the data
+ *             it will send on the connection.
+ *
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::connect_server() {
