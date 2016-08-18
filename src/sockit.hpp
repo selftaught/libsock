@@ -3,6 +3,25 @@
 #define __sockit_h
 
 /**
+ *          OSI Model                   IP Suite
+ *       +------------------+       +------------------+                           (application details)
+ * (7) - |   application    |       |                  |                                     ^
+ *       +------------------+       |                  |                    (user process)   |
+ * (6) - |   presentation   |       | Application      |                          ^          |
+ *       +------------------+       |                  |                          |          |
+ * (5) - |     session      |       |                  |                          |          |
+ *       +------------------+ <---> +-----+------+-----+ <----- sockets (XTI)  ---+----------+
+ * (4) - |    transport     |       | TCP |      | UDP |                          |          |
+ *       +------------------+       +-----+------+-----+                          |          |
+ * (3) - |     network      |       |    IPv4 - IPv6   |                          V          |
+ *       +------------------+       +------------------+                       (kernel)      |
+ * (2) - |     datalink     |       |      Device      |                                     V
+ *       +------------------+       |      Driver      |                          (communication details)
+ * (1) - |     physical     |       |     Hardware     |
+ *       +------------------+       +------------------+
+ */
+
+/**
  * + USEFUL AND INFORMATIVE LINKS:
  *  http://linux.die.net/man/3/setsockopt - options for setsockopt
  *
@@ -53,19 +72,32 @@
 #elif defined(__APPLE__) || defined(__linux__)
 
 /**
- * Linux / Apple specific includes and preprocessors.
+ * Linux / Darwin platform specific includes and preprocessors.
  */
 #define __NIX 1
 
 /**
- * <netdb.h>
- * <unistd.h>
- * <fcntl.h>
- * <poll.h>
+ * <netdb.h>  - (http://pubs.opengroup.org/onlinepubs/7908799/xns/netdb.h.html)        
+ *            - (definitions for network database operations)
  */
 #include <netdb.h>
+
+/**
+ * <unistd.h> - (http://pubs.opengroup.org/onlinepubs/7908799/xsh/unistd.h.html)       
+ *            - (standard symbolic constants and types)
+ */
 #include <unistd.h>
+
+/**
+ * <fcntl.h>  - (http://pubs.opengroup.org/onlinepubs/009695399/basedefs/fcntl.h.html)
+ *            - (file control options)
+ */
 #include <fcntl.h>
+
+/**
+ * <poll.h>   - (http://pubs.opengroup.org/onlinepubs/7908799/xsh/poll.h.html)
+ *            - (defines the pollfd structure)
+ */
 #include <poll.h>
 
 #endif
@@ -73,7 +105,7 @@
 /**
  *
  */
-#define POLL_EXPIRE (0)
+#define POLL_EXPIRE 0
 
 /**
  * Default recv char array lengths
