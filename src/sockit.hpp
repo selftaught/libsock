@@ -19,9 +19,21 @@
  *       +------------------+       |      Driver      |                          (communication details)
  * (1) - |     physical     |       |     Hardware     |
  *       +------------------+       +------------------+
- */
-
-/**
+ *
+ *
+ *
+ * Type bit values for LP 32/64 arch models
+ * +-----------+-------------+------------+
+ * | Data Type | ILP32 Model | LP64 Model |
+ * +-----------+-------------+------------+
+ * | char      | 8           | 8          |
+ * | short     | 16          | 16         |
+ * | int       | 32          | 32         |
+ * | long      | 32          | 64         |
+ * | pointer   | 32          | 64         |
+ * +-----------+-------------+------------+
+ *
+ *
  * + USEFUL AND INFORMATIVE LINKS:
  *  http://linux.die.net/man/3/setsockopt - options for setsockopt
  *
@@ -31,6 +43,7 @@
  *  <cstdarg>   - Is used for va_list in SocketException
  *  <string>    - Is used so VS doesn't bitch when writing a simple line like 'std::cout << string << std::endl;'
  *  <cstring>   - Is used for std::strerror instead of strerror because g++ throws template related errors otherwise. 
+ *
  */
 #include <iostream>
 #include <exception>
@@ -46,6 +59,7 @@
  * supports C++11. This isn't that reliable of a solution.
  *
  * @source: http://stackoverflow.com/questions/10717502/is-there-a-preprocessor-directive-for-detecting-c11x-support
+ *
  */
 #if defined(__cplusplus)
 #if __cplusplus > 199711L
@@ -144,6 +158,7 @@ enum SOCKET_TYPE {
  * of Socket checking and defining m_socket based on the current
  * system. However, by define DEFAULT_SOCKET_VAL, we don't need to do that.
  * We can simply define m_socket like m_socket(DEFAULT_SOCKET_VAL) instead.
+ *
  */
 #if defined (__NIX)
 	#define DEFAULT_SOCKET_VAL -1
@@ -156,6 +171,7 @@ enum SOCKET_TYPE {
  * SocketException class
  *
  * @credits: http://stackoverflow.com/questions/8152720/correct-way-to-inherit-from-stdexception
+ *
  */
 class SocketException : public std::exception {
 public:
@@ -165,6 +181,7 @@ public:
      *                 The string contents are copied upon construction.
      *                 Hence, responsibility for deleting the char* lies
      *                 with the caller.
+     *                 
      */
     explicit SocketException(const char* fmt, ...) {
         va_list ap;
