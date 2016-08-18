@@ -254,10 +254,10 @@ protected:
 };
 
 /**
- * Base socket class.
- *
- * This is the class which UdpSocket and TcpSocket are derived from.
- *
+ * Base socket class. 
+ * Templatizing this makes it so we don't have to create
+ * a parent base socket class, create a new class for each
+ * socket type, and derive from it..
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 class Socket {
@@ -668,7 +668,10 @@ void Socket<socket_t, proc_t>::connect_client() {
 }
 
 /**
+ * ready
+ *  @param (const uint32_t&) events - poll events
  *
+ *  @return bool
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 bool Socket<socket_t, proc_t>::ready(const uint32_t& events) {
@@ -680,7 +683,11 @@ bool Socket<socket_t, proc_t>::ready(const uint32_t& events) {
 }
 
 /**
+ * set_blocking
+ *  @param (int ) fd       - file descriptor
+ *  @param (bool) blocking - blocking flag
  *
+ *  @return bool
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 bool Socket<socket_t, proc_t>::set_blocking(int fd, bool blocking) {
@@ -710,7 +717,9 @@ bool Socket<socket_t, proc_t>::set_blocking(int fd, bool blocking) {
 }
 
 /**
+ * recieve
  *
+ *  @return std::string
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 std::string Socket<socket_t, proc_t>::receive() {
@@ -782,7 +791,11 @@ std::string Socket<socket_t, proc_t>::receive() {
 }
 
 /**
+ * send
+ *  @param (const std::string&) message - message to send
+ *  @param (bool) OOB - out of bounds
  *
+ *  @return ssize_t
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
