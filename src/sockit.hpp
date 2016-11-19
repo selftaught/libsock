@@ -4,18 +4,18 @@
 
 /**
  *          OSI Model                   IP Suite
- *       +------------------+       +------------------+                           (application details)
- * (7) - |   application    |       |                  |                                     ^
- *       +------------------+       |                  |                    (user process)   |
- * (6) - |   presentation   |       | Application      |                          ^          |
- *       +------------------+       |                  |                          |          |
- * (5) - |     session      |       |                  |                          |          |
- *       +------------------+ <---> +-----+------+-----+ <----- sockets (XTI)  ---+----------+
- * (4) - |    transport     |       | TCP |      | UDP |                          |          |
- *       +------------------+       +-----+------+-----+                          |          |
- * (3) - |     network      |       |    IPv4 - IPv6   |                          V          |
- *       +------------------+       +------------------+                       (kernel)      |
- * (2) - |     datalink     |       |      Device      |                                     V
+ *       +------------------+       +------------------+                          (application details)
+ * (7) - |   application    |       |                  |                                    ^
+ *       +------------------+       |                  |                   (user process)   |
+ * (6) - |   presentation   |       | Application      |                         ^          |
+ *       +------------------+       |                  |                         |          |
+ * (5) - |     session      |       |                  |                         |          |
+ *       +------------------+ <---> +-----+------+-----+ <----- sockets (XTI) ---+----------+
+ * (4) - |    transport     |       | TCP |      | UDP |                         |          |
+ *       +------------------+       +-----+------+-----+                         |          |
+ * (3) - |     network      |       |    IPv4 - IPv6   |                         V          |
+ *       +------------------+       +------------------+                      (kernel)      |
+ * (2) - |     datalink     |       |      Device      |                                    V
  *       +------------------+       |      Driver      |                          (communication details)
  * (1) - |     physical     |       |     Hardware     |
  *       +------------------+       +------------------+
@@ -170,6 +170,17 @@ enum SOCKET_TYPE {
 };
 
 /**
+ * Relevant socket structs for packets and such.
+ */
+struct IP_HEADER_STRUCT {
+
+}; 
+
+struct UDP_HEADER_STRUCT {
+
+};
+
+/**
  * Define the default socket value. This is done because without
  * it, we'd have to add preprocessor conditions to each constructor
  * of Socket checking and defining m_socket based on the current
@@ -182,6 +193,25 @@ enum SOCKET_TYPE {
 #else
 	#define DEFAULT_SOCKET_VAL INVALID_SOCKET
 	#define WIN32_LEAN_AND_MEAN
+#endif
+
+/**
+ * Debugging variable and function macros.
+ */
+#define __SOCKET_TYPE  "UNDEFINED"
+#define __PROCESS_TYPE "UNDEFINED"
+#define __DEBUGGING    true
+#ifdef  __DEBUGGING
+    #define DEBUG_STDERR(x) (std::cerr << (x) << std::endl)
+    #define DEBUG_STDOUT(x) \
+        (std::cout << "[ " << __FILE__ << " ] " \
+                   << "(line " << __LINE__ << "): " \
+                   << (x) \
+                   << std::endl \
+        )
+#else
+    #define DEBUG_STDERR(x)
+    #define DEBUG_STDOUT(x)
 #endif
 
 /**
@@ -256,8 +286,9 @@ protected:
 /**
  * Base socket class. 
  * Templatizing this makes it so we don't have to create
- * a parent base socket class, create a new class for each
- * socket type, and derive from it..
+ * a parent base socket class and derived classes for each
+ * socket type where we'd end up redefining and rewriting
+ * a lot of the same code.
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 class Socket {
@@ -347,7 +378,7 @@ public:
         m_backlog(5),
         m_protocol(protocol),
         m_socket(DEFAULT_SOCKET_VAL)
-    { }
+    {}
 
     Socket(const std::string& hostname, const uint16_t& port, int protocol = 0):
         m_hostname(hostname),
@@ -356,7 +387,7 @@ public:
         m_backlog(5),
         m_protocol(protocol),
         m_socket(DEFAULT_SOCKET_VAL)
-    { }
+    {}
     
     Socket(const std::string& hostname, const std::string& port, int protocol = 0):
         m_hostname(hostname),
@@ -365,7 +396,7 @@ public:
         m_backlog(5),
         m_protocol(protocol),
         m_socket(DEFAULT_SOCKET_VAL)
-    { }
+    {}
     
     /**
      * Destructor.
@@ -373,9 +404,8 @@ public:
     ~Socket();
     
     /**
-     * Function prototypes.
+     * Member function prototypes.
      */
-    
     void init();
     void disconnect();
     void connect();
@@ -398,7 +428,7 @@ public:
     void set_protocol      (const int        & protocol) { m_protocol   = protocol;           }
 
     /**
-     *
+     * Getters
      */
     pollfd* pfd() {
         return m_pfd;
@@ -415,7 +445,7 @@ Socket<socket_t, proc_t>::~Socket() {
 
 /**
  * Calls the correct connect function (server or client)
- * based on the value of m_proc_type;
+ * based on the value of m_proc_type
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::connect() {
@@ -447,11 +477,13 @@ void Socket<socket_t, proc_t>::connect() {
 }
 
 /**
- * Closes the socket if it's open.
+ * Closes the socket if it's open
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::disconnect() {
-    
+
+   DEBUG_STDOUT("disconnecting socket"); 
+
 #if defined(__NIX)
     if(m_socket != -1) {
         close(m_socket);
@@ -482,12 +514,16 @@ void Socket<socket_t, proc_t>::disconnect() {
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::connect_server() {
     
+    DEBUG_STDOUT("starting server connection");
+
     /**
      * Throw an exception if the port hasn't be defined by the user.
      */
     if(!m_port) {
         throw SocketException("port not defined");
     }
+
+    DEBUG_STDOUT("creating socket");
     
 #if defined(__NIX)
     m_socket = socket(m_af, socket_t, m_protocol);
@@ -498,6 +534,8 @@ void Socket<socket_t, proc_t>::connect_server() {
     if(m_socket == -1) {
         throw SocketException("socket failed: %s", std::strerror(errno));
     }
+
+    DEBUG_STDOUT("successfully established a socket connection");
 
     /**
      * @TODO: Implement support and abstraction for setting 
@@ -516,11 +554,13 @@ void Socket<socket_t, proc_t>::connect_server() {
      * SO_REUSEPORT needs to be set if the current linux kernel version is >= 3.9
      */
 #ifdef SO_REUSEPORT
+    DEBUG_STDOUT("setting SO_REUSEPORT (requirement since kernel version >= 3.9");
     if(setsockopt(m_socket, SOL_SOCKET, SO_REUSEPORT, (const void*)&toggle, sizeof(toggle)) == -1) {
         throw SocketException("setsockopt SO_REUSEPORT failed: %s", std::strerror(errno));
     } 
 #endif
 
+    DEBUG_STDOUT("setting memory segment size of struct sockaddr_in to 0");
     /**
      * Set all bytes of m_host to zero. memset() is MT-Safe
      * See: http://man7.org/linux/man-pages/man3/memset.3.html
@@ -675,11 +715,7 @@ void Socket<socket_t, proc_t>::connect_client() {
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 bool Socket<socket_t, proc_t>::ready(const uint32_t& events) {
-    if(!(m_pfd[ 0 ].events & events)) {
-        return false;
-    }
-    
-    return true;
+    return !(m_pfd[ 0 ].events & events);
 }
 
 /**
@@ -693,8 +729,11 @@ template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 bool Socket<socket_t, proc_t>::set_blocking(int fd, bool blocking) {
     
     if(fd < 0) {
+        DEBUG_STDOUT("fd (file descriptor) is < 0 - failed to update the sockets blocking state");
         return false;
     }
+
+    DEBUG_STDOUT("setting socket blocking to: " + std::to_string(blocking));
     
     uint32_t rc = -1;
     
@@ -737,7 +776,7 @@ std::string Socket<socket_t, proc_t>::receive() {
          * Server 
          */
         if(proc_t == SERVER) {
-            std::cout << "accepting...\n";
+            DEBUG_STDOUT("accepting connection from client...");
             m_tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
             
             if(m_tcp_socket == -1) {
@@ -753,7 +792,9 @@ std::string Socket<socket_t, proc_t>::receive() {
         /**
          * Client
          */
-        else {            
+        else {
+            DEBUG_STDOUT("accepting connection from server...");
+
             if(read(m_socket, buffer, m_buf_size) == -1) {
                 close(m_socket);
                 throw SocketException("read failed: %s", std::strerror(errno));
@@ -799,6 +840,9 @@ std::string Socket<socket_t, proc_t>::receive() {
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
+
+    DEBUG_STDOUT("in send(message, OOB)");
+
     if(proc_t == SERVER) {
         if(m_socket == -1 || (socket_t == TCP && m_tcp_socket == -1)) {
             throw SocketException("socket not connected");
@@ -809,6 +853,9 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
     int socket = (socket_t == UDP ? m_socket : m_tcp_socket);    
 
 #if defined(__NIX)
+    #ifdef __DEBUGGING
+        DEBUG_STDOUT("sending " + std::to_string(message.size()) + " bytes of data");
+    #endif
     bytes_sent = write(socket, message.c_str(), strlen(message.c_str())); 
 
     if(bytes_sent == -1) {
@@ -816,7 +863,10 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
     }
 
     if(socket_t == TCP) {
-        // Close the TCP child socket otherwise the request will hang.
+        /**
+         * Close the TCP child socket otherwise the request will hang.
+         */
+        DEBUG_STDOUT("closing connection...");
         close(m_tcp_socket);
     }
 #else
