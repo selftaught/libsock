@@ -64,26 +64,19 @@ void udp_server(const uint16_t& port, std::string host) {
     }
 
     while(true) {
-        int e = poll(socket.handle(), 1, 500);
+        try {
+            std::string received = socket.receive();
 
-        switch(e) {
-            case POLL_EXPIRE: break;
-            default: {
-                try {
-                    std::string received = socket.receive();
+            if(!received.empty()) {
+                std::cout << "received " << received.length() << " bytes\n";
+                std::cout << "message: \n\n" << received << std::endl;
 
-                    if(!received.empty()) {
-                        std::cout << "received " << received.length() << " bytes\n";
-                        std::cout << "message: \n\n" << received << std::endl;
-
-                        socket.send("<html><body><h1>Got it!</h1></body></html>");
-                    }
-                }
-                catch(SocketException e) {
-                    std::cerr << e.what() << std::endl;
-                    break;
-                }
+                socket.send("<html><body><h1>Got it!</h1></body></html>");
             }
+        }
+        catch(SocketException e) {
+            std::cerr << e.what() << std::endl;
+            break;
         }
     }
 }

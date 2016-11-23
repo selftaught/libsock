@@ -105,23 +105,35 @@
 #define __NIX 1
 
 /**
+ * <sys/socket.h>  - (https://linux.die.net/man/3/gethostbyaddr)
+ *                 - (gethostbyaddr)
+ */
+#include <sys/socket.h>
+
+/**
  * <netdb.h>  - (http://pubs.opengroup.org/onlinepubs/7908799/xns/netdb.h.html)        
  *            - (definitions for network database operations)
  */
 #include <netdb.h>
 
 /**
- * <netinet/tcp.h> -
- *                 - (provides the tcp header struct w
+ * <netinet/tcp.h> - (http://unix.superglobalmegacorp.com/BSD4.4/newsrc/netinet/tcp.h.html)
+ *                 - (provides the tcp header struct)
  */
 #include <netinet/tcp.h>
 
 /**
- * <netinet/ip.h> -
+ * <netinet/ip.h> - (http://unix.superglobalmegacorp.com/BSD4.4/newsrc/netinet/ip.h.html)
  *                - (provides the ip header struct which is used for raw packets)
  *
  */
 #include <netinet/ip.h>
+
+/**
+ * <arpa/inet.h> - (https://linux.die.net/man/3/inet_ntoa)
+ *               - (inet_ntoa, etc)
+ */
+#include <arpa/inet.h>
 
 /**
  * <unistd.h> - (http://pubs.opengroup.org/onlinepubs/7908799/xsh/unistd.h.html)       
@@ -140,6 +152,18 @@
  *            - (defines the pollfd structure)
  */
 #include <poll.h>
+
+/**
+ * <net/if.h>  - (http://pubs.opengroup.org/onlinepubs/009696699/basedefs/net/if.h.html)
+ *             - (provides interface index / name functions)
+ */
+#include <net/if.h>
+
+/**
+ * <ifaddrs.h> - (http://man7.org/linux/man-pages/man3/getifaddrs.3.html)
+ *             - (gets interface addresses)
+ */
+#include <ifaddrs.h>
 
 #endif
 
@@ -213,9 +237,16 @@ struct UDP_HEADER_STRUCT {
  */
 #define __DEBUGGING 1
 #ifdef  __DEBUGGING
-    #define DEBUG_STDERR(x) (std::cerr << (x) << std::endl)
+    #define DEBUG_STDERR(x) \
+        (std::cout << "[ " << __FILE__ << " ] " \
+                   << "(func " << __FUNCTION__ << "): " \
+                   << "(line " << __LINE__ << "): " \
+                   << (x) \
+                   << std::endl \
+        )
     #define DEBUG_STDOUT(x) \
         (std::cout << "[ " << __FILE__ << " ] " \
+                   << "(func " << __FUNCTION__ << "): " \
                    << "(line " << __LINE__ << "): " \
                    << (x) \
                    << std::endl \
@@ -325,6 +356,7 @@ protected:
      * @TODO: implement ipv6 support.
      */
     struct sockaddr_in m_sockaddr;
+    struct sockaddr_in m_client_sockaddr;
     
     /**
      * Address family.
@@ -346,6 +378,11 @@ protected:
      *
      */
     struct pollfd m_pfd[ 1 ];
+
+    /**
+     *
+     */
+    char* m_client_addr;
     
     /**
      * If the current system is *nix or darwin
@@ -359,6 +396,7 @@ protected:
     int m_tcp_socket;
 
     struct hostent* m_host;
+    struct hostent* m_client_host;
 
     /**
      * Else the system is windows.
@@ -385,7 +423,7 @@ public:
      */
     Socket(const uint16_t& port, int protocol = 0):
         m_port(port),
-        m_af(AF_INET), // @TODO add support for ipv6
+        m_af(AF_INET),
         m_backlog(5),
         m_protocol(protocol),
         m_socket(DEFAULT_SOCKET_VAL)
@@ -394,7 +432,7 @@ public:
     Socket(const std::string& hostname, const uint16_t& port, int protocol = 0):
         m_hostname(hostname),
         m_port(port),
-        m_af(AF_INET), // @TODO add support for ipv6
+        m_af(AF_INET),
         m_backlog(5),
         m_protocol(protocol),
         m_socket(DEFAULT_SOCKET_VAL)
@@ -403,7 +441,7 @@ public:
     Socket(const std::string& hostname, const std::string& port, int protocol = 0):
         m_hostname(hostname),
         m_port(std::stoi(port)),
-        m_af(AF_INET), // @TODO add support for ipv6
+        m_af(AF_INET),
         m_backlog(5),
         m_protocol(protocol),
         m_socket(DEFAULT_SOCKET_VAL)
@@ -492,7 +530,6 @@ void Socket<socket_t, proc_t>::connect() {
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::disconnect() {
-
    DEBUG_STDOUT("disconnecting socket"); 
 
 #if defined(__NIX)
@@ -707,7 +744,6 @@ void Socket<socket_t, proc_t>::connect_client() {
     }
     else if(socket_t == UDP) {
         socklen_t sock_size = sizeof(struct sockaddr*);
-        
         if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sock_size) == -1) {
             disconnect();
             throw SocketException("bind failed: %s", std::strerror(errno));
@@ -807,7 +843,7 @@ std::string Socket<socket_t, proc_t>::receive() {
          * Client
          */
         else {
-            DEBUG_STDOUT("accepting connection from server...");
+            DEBUG_STDOUT("listening for a response from the server...");
 
             if(read(m_socket, buffer, m_buf_size) == -1) {
                 close(m_socket);
@@ -824,8 +860,24 @@ std::string Socket<socket_t, proc_t>::receive() {
          */
         if(proc_t == SERVER) {
             DEBUG_STDOUT("calling recvfrom");
-            if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_sockaddr, &sock_size) == -1) {
+
+            if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_client_sockaddr, &sock_size) == -1) {
                 throw SocketException("recvfrom failed: %s", std::strerror(errno));
+            }
+
+            /**
+             * Get addr info about who sent the udp packet.
+             */
+            m_client_host = gethostbyaddr((const char*)&m_client_sockaddr.sin_addr.s_addr, sock_size, AF_INET);
+
+            if (m_client_host == NULL) {
+                throw SocketException("gethostbyaddr: failed to get client info");
+            }
+
+            m_client_addr = inet_ntoa(m_client_sockaddr.sin_addr);
+
+            if (m_client_addr == NULL) {
+                throw SocketException("inet_ntoa: returned null - couldn't get client addr");
             }
         }
         /**
@@ -860,9 +912,6 @@ std::string Socket<socket_t, proc_t>::receive() {
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
-
-    DEBUG_STDOUT("in send(message, OOB)");
-
     if(proc_t == SERVER) {
         if(m_socket == -1 || (socket_t == TCP && m_tcp_socket == -1)) {
             throw SocketException("socket not connected");
@@ -875,18 +924,32 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
 #if defined(__NIX)
     DEBUG_STDOUT("sending " + std::to_string(message.size()) + " bytes of data");
 
-    bytes_sent = write(socket, message.c_str(), strlen(message.c_str())); 
-
-    if(bytes_sent == -1) {
-       throw SocketException("sendto failed: %s", std::strerror(errno));
-    }
-
     if(socket_t == TCP) {
+        bytes_sent = write(socket, message.c_str(), strlen(message.c_str())); 
+
+        if(bytes_sent == -1) {
+           throw SocketException("sendto failed: %s", std::strerror(errno));
+        }
+
         /**
          * Close the TCP child socket otherwise the request will hang.
          */
         DEBUG_STDOUT("closing connection...");
         close(m_tcp_socket);
+    }
+    else if(socket_t == UDP) {
+        bytes_sent = sendto(
+            m_socket,
+            message.c_str(),
+            strlen(message.c_str()),
+            0,
+            (struct sockaddr*)&m_client_sockaddr,
+            sizeof(m_client_sockaddr)
+        );
+
+        if(bytes_sent == -1) {
+           throw SocketException("sendto failed: %s", std::strerror(errno));
+        }
     }
 #else
     /**
