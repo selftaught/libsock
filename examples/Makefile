@@ -1,12 +1,24 @@
 CC=g++
-CFLAGS=-std=c++11 -Wall
-EXAMPLE_BIN=bin/sockit
-EXAMPLE_CPPS=main.cpp tcp/*.cpp udp/*.cpp
+CFLAGS=-std=c++11 -Wall -I../src
 
-all: mkdir_bin examples 
+all: \
+	mkdir_bin \
+	tcp_server \
+	tcp_client \
+	udp_server \
+	udp_client
 
-examples: $(EXAMPLE_CPPS) 
-	$(CC) $(CFLAGS) $(EXAMPLE_CPPS) -o $(EXAMPLE_BIN) 
+tcp_server:
+	$(CC) $(CFLAGS) tcp_server.cpp -o bin/tcp_server 
+
+tcp_client:
+	$(CC) $(CFLAGS) tcp_client.cpp -o bin/tcp_client
+
+udp_server:
+	$(CC) $(CFLAGS) udp_server.cpp -o bin/udp_server 
+
+udp_client:
+	$(CC) $(CFLAGS) udp_client.cpp -o bin/udp_client
 
 mkdir_bin: ; if [ ! -d bin ]; then mkdir bin; fi
-clean:     ; if [   -d bin ]; then rm -rf bin; fi
+clean:     ; if [   -d bin ]; then rm -f bin/*; fi

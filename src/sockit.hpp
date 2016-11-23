@@ -111,6 +111,19 @@
 #include <netdb.h>
 
 /**
+ * <netinet/tcp.h> -
+ *                 - (provides the tcp header struct w
+ */
+#include <netinet/tcp.h>
+
+/**
+ * <netinet/ip.h> -
+ *                - (provides the ip header struct which is used for raw packets)
+ *
+ */
+#include <netinet/ip.h>
+
+/**
  * <unistd.h> - (http://pubs.opengroup.org/onlinepubs/7908799/xsh/unistd.h.html)       
  *            - (standard symbolic constants and types)
  */
@@ -172,7 +185,7 @@ enum SOCKET_TYPE {
 /**
  * Relevant socket structs for packets and such.
  */
-struct IP_HEADER_STRUCT {
+struct ip_header_struct {
 
 }; 
 
@@ -196,11 +209,9 @@ struct UDP_HEADER_STRUCT {
 #endif
 
 /**
- * Debugging variable and function macros.
+ * Debugging preprocessors.
  */
-#define __SOCKET_TYPE  "UNDEFINED"
-#define __PROCESS_TYPE "UNDEFINED"
-#define __DEBUGGING    true
+#define __DEBUGGING 1
 #ifdef  __DEBUGGING
     #define DEBUG_STDERR(x) (std::cerr << (x) << std::endl)
     #define DEBUG_STDOUT(x) \
@@ -277,7 +288,7 @@ protected:
      *
      */
     void init(const char* fmt, va_list ap) {
-        char errbuf[256];
+        char errbuf[ 256 ];
         vsnprintf(errbuf, sizeof(errbuf), fmt, ap);
         msg_ = errbuf;
     }
@@ -430,7 +441,7 @@ public:
     /**
      * Getters
      */
-    pollfd* pfd() {
+    pollfd* handle() {
         return m_pfd;
     }
 };
@@ -581,12 +592,15 @@ void Socket<socket_t, proc_t>::connect_server() {
         close(m_socket);
         throw SocketException("bind failed: %s", std::strerror(errno));
     }
+
+    DEBUG_STDOUT("socket bind() was successful!");
     
     /**
      * If this is a TCP server then we need to
      * put the socket in listening mode.
      */
     if(socket_t == TCP) {
+        DEBUG_STDOUT("listening for incoming tcp connections");
         listen(m_socket, m_backlog);
     }
     
@@ -809,7 +823,7 @@ std::string Socket<socket_t, proc_t>::receive() {
          * Server 
          */
         if(proc_t == SERVER) {
-            std::cout << "calling recvfrom\n";
+            DEBUG_STDOUT("calling recvfrom");
             if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_sockaddr, &sock_size) == -1) {
                 throw SocketException("recvfrom failed: %s", std::strerror(errno));
             }
@@ -822,6 +836,12 @@ std::string Socket<socket_t, proc_t>::receive() {
             * @TODO: implement UDP client recv functionality
             */ 
         }
+    }
+    /**
+     * RAW
+     */
+    else if(socket_t == RAW) {
+
     }
 #else
     /**
@@ -853,9 +873,8 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
     int socket = (socket_t == UDP ? m_socket : m_tcp_socket);    
 
 #if defined(__NIX)
-    #ifdef __DEBUGGING
-        DEBUG_STDOUT("sending " + std::to_string(message.size()) + " bytes of data");
-    #endif
+    DEBUG_STDOUT("sending " + std::to_string(message.size()) + " bytes of data");
+
     bytes_sent = write(socket, message.c_str(), strlen(message.c_str())); 
 
     if(bytes_sent == -1) {
