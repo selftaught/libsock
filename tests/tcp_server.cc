@@ -1,5 +1,5 @@
 #include "../src/sockit.hpp"
-#include "../tools/gtest/gtest.h"
+#include "../tools/gtest/include/gtest/gtest.h"
 
 namespace {
 

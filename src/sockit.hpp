@@ -1,70 +1,13 @@
-
 #ifndef __sockit_hpp
 #define __sockit_hpp
 
-/**
- *          OSI Model                   IP Suite
- *       +------------------+       +------------------+                          (application details)
- * (7) - |   application    |       |                  |                                    ^
- *       +------------------+       |                  |                   (user process)   |
- * (6) - |   presentation   |       | Application      |                         ^          |
- *       +------------------+       |                  |                         |          |
- * (5) - |     session      |       |                  |                         |          |
- *       +------------------+ <---> +-----+------+-----+ <----- sockets (XTI) ---+----------+
- * (4) - |    transport     |       | TCP |      | UDP |                         |          |
- *       +------------------+       +-----+------+-----+                         |          |
- * (3) - |     network      |       |    IPv4 - IPv6   |                         V          |
- *       +------------------+       +------------------+                      (kernel)      |
- * (2) - |     datalink     |       |      Device      |                                    V
- *       +------------------+       |      Driver      |                          (communication details)
- * (1) - |     physical     |       |     Hardware     |
- *       +------------------+       +------------------+
- *
- *
- *
- * Type bit values for LP 32/64 arch models
- * +-----------+-------------+------------+
- * | Data Type | ILP32 Model | LP64 Model |
- * +-----------+-------------+------------+
- * | char      | 8           | 8          |
- * | short     | 16          | 16         |
- * | int       | 32          | 32         |
- * | long      | 32          | 64         |
- * | pointer   | 32          | 64         |
- * +-----------+-------------+------------+
- *
- * - PROTOCOLS
- *      * IPv4   - (32 bit addresses) provides packet delivery service for TCP, UDP, SCTP, ICMP, and IGMP.
- *      * IPv6   - (128 bit addresses) replacement for IPv4. Provides delivery service for for TCP, UDP, SCTP, and ICMPv6.
- *      * TCP    - Transmission Control Protocol.
- *      * UDP    - User Datagram Protocol.
- *      * SCTP   - Stream Control Transmission Protocol.
- *      * ICMP   - Internet Control Message Protocol.
- *      * IGMP   - Internet Group Management Protocol.
- *      * ARP    - Address Resolution Protocol.
- *      * RARP   - Reverse Address Resolution Protocol.
- *      * ICMPv6 - Internet Control Message Protocol version 6.
- *      * BPF    - BSD Packet Filter.
- *      * DLPI   - Datalink Provider Interface.
- *
- *
- * - USEFUL AND INFORMATIVE LINKS:
- *  http://linux.die.net/man/3/setsockopt - options for setsockopt
- *
- * - Cross platform header files
- *  <exception> - Is used for creating our custom socket exception classes.
- *  <cstdint>   - Is used for int typedefs.
- *  <cstdarg>   - Is used for va_list in SocketException
- *  <string>    - Is used so VS doesn't bitch when writing a simple line like 'std::cout << string << std::endl;'
- *  <cstring>   - Is used for std::strerror instead of strerror because g++ throws template related errors otherwise. 
- *
- */
 #include <iostream>
 #include <exception>
 #include <cstdint>
 #include <cstdarg>
 #include <string>
 #include <cstring>
+#include <errno.h>
 
 /**
  * Make sure __cplusplus is defined because it's value will tell us what version of
@@ -76,118 +19,141 @@
  *
  */
 #if defined(__cplusplus)
-#if __cplusplus > 199711L
-#define CPP11 1
+#    if __cplusplus >= 201103L
+#        define CPP11 1
+#    else
+#        define CPP11 0
+#    endif
 #else
-#define CPP11 0
+#    error("C++ compiler is required...")
 #endif
-#else
-#error A C++ compiler is required...
-#endif
-
-#if defined(_WIN32) || defined(_WIN64)
 
 /**
- * Window specific includes and preprocessors.
+ * WINDOWS 
+ * @resource: https://msdn.microsoft.com/en-us/library/b0084kay.aspx
  */
-#define __WIN 1
+#if defined(_WIN32) || defined(_WIN64)
 
+#define PREDEF_PLATFORM_WINDOWS 1
+
+/**
+ * @include: <WinSock2.h>
+ * @platform: windows
+ */
 #include <WinSock2.h>
+/**
+ * @include: <ws2tcpip.h>
+ * @platform: windows
+ */
 #include <ws2tcpip.h>
 
 #pragma comment(lib, "ws2_32.lib")
 
+/**
+ * DARWIN / LINUX
+ */
 #elif defined(__APPLE__) || defined(__linux__)
 
-/**
- * Linux / Darwin platform specific includes and preprocessors.
- */
-#define __NIX 1
+#define PREDEF_PLATFORM_LINUX 1
 
 /**
- * <sys/socket.h>  - (https://linux.die.net/man/3/gethostbyaddr)
- *                 - (gethostbyaddr)
+ * @include: <sys/socket.h>
+ * @reference: https://linux.die.net/man/3/gethostbyaddr
+ * @functions: gethostbyaddr
+ * @platform: linux/darwin
  */
 #include <sys/socket.h>
 
 /**
- * <netdb.h>  - (http://pubs.opengroup.org/onlinepubs/7908799/xns/netdb.h.html)        
- *            - (definitions for network database operations)
+ * @include: <netdb.h>
+ * @reference: http://pubs.opengroup.org/onlinepubs/7908799/xns/netdb.h.html  
+ * @platform: linux/darwin
  */
 #include <netdb.h>
 
 /**
- * <netinet/tcp.h> - (http://unix.superglobalmegacorp.com/BSD4.4/newsrc/netinet/tcp.h.html)
- *                 - (provides the tcp header struct)
+ * @include: <netinet/tcp.h>
+ * @reference: http://unix.superglobalmegacorp.com/BSD4.4/newsrc/netinet/tcp.h.html
+ * @variables: (provides the tcp header struct)
+ * @platform: linux/darwin
  */
 #include <netinet/tcp.h>
 
 /**
- * <netinet/ip.h> - (http://unix.superglobalmegacorp.com/BSD4.4/newsrc/netinet/ip.h.html)
- *                - (provides the ip header struct which is used for raw packets)
- *
+ * @include: <netinet/ip.h>
+ * @reference: http://unix.superglobalmegacorp.com/BSD4.4/newsrc/netinet/ip.h.html
+ * (provides the ip header struct which is used for raw packets)
+ * @platform: linux/darwin
  */
 #include <netinet/ip.h>
 
 /**
- * <arpa/inet.h> - (https://linux.die.net/man/3/inet_ntoa)
- *               - (inet_ntoa, etc)
+ * @include: <arpa/inet.h>
+ * @reference: https://linux.die.net/man/3/inet_ntoa
+ * (inet_ntoa, etc)
+ * @platform: linux/darwin
  */
 #include <arpa/inet.h>
 
 /**
- * <unistd.h> - (http://pubs.opengroup.org/onlinepubs/7908799/xsh/unistd.h.html)       
- *            - (standard symbolic constants and types)
+ * @include: <unistd.h>
+ * @reference: http://pubs.opengroup.org/onlinepubs/7908799/xsh/unistd.h.html 
+ * (standard symbolic constants and types)
+ * @platform: linux/darwin
  */
 #include <unistd.h>
 
 /**
- * <fcntl.h>  - (http://pubs.opengroup.org/onlinepubs/009695399/basedefs/fcntl.h.html)
- *            - (file control options)
+ * @include: <fcntl.h>
+ * @reference: http://pubs.opengroup.org/onlinepubs/009695399/basedefs/fcntl.h.html
+ * (file control options)
+ * @platform: linux/darwin
  */
 #include <fcntl.h>
 
 /**
- * <poll.h>   - (http://pubs.opengroup.org/onlinepubs/7908799/xsh/poll.h.html)
- *            - (defines the pollfd structure)
+ * @include: <poll.h>
+ * @reference: http://pubs.opengroup.org/onlinepubs/7908799/xsh/poll.h.html
+ * (defines the pollfd structure)
+ * @platform: linux/darwin
  */
 #include <poll.h>
 
 /**
- * <net/if.h>  - (http://pubs.opengroup.org/onlinepubs/009696699/basedefs/net/if.h.html)
- *             - (provides interface index / name functions)
+ * @include: <net/if.h>
+ * @reference: http://pubs.opengroup.org/onlinepubs/009696699/basedefs/net/if.h.html
+ * (provides interface index / name functions)
+ * @platform: linux/darwin
  */
 #include <net/if.h>
 
 /**
- * <ifaddrs.h> - (http://man7.org/linux/man-pages/man3/getifaddrs.3.html)
- *             - (gets interface addresses)
+ * @include: <ifaddrs.h>
+ * @reference: http://man7.org/linux/man-pages/man3/getifaddrs.3.html
+ * (gets interface addresses)
+ * @platform: linux/darwin
  */
 #include <ifaddrs.h>
 
 #endif
 
 /**
- *
+ * 
  */
 #define POLL_EXPIRE 0
 
 /**
- * Default recv char array lengths
- * for the UDP and TCP protocols.
+ * Default recv char array lengths for UDP and TCP.
  */
 #define UDP_RECV_BUF_LEN 576
 #define TCP_RECV_BUF_LEN 1500
 
 /**
- * Buffer length for char errbuf[] in SocketException->init.
- * This length defines the max length of an error message 
- * that can be thrown by SockException.
- */
-#define ERR_BUF_LEN 256
-
-/**
- * Enums.
+ * @enum: PROC_TYPE
+ * @enumerator: UNDEF = 0
+ * @enumerator: CLIENT = 1
+ * @enumerator: SERVER = 2
+ * @description: Process type.
  */
 enum PROC_TYPE {
     UNDEF,
@@ -196,7 +162,76 @@ enum PROC_TYPE {
 };
 
 /**
- * Various socket types.
+ * ICMP control message enums.
+ * @reference: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
+ * @reference: https://tools.ietf.org/html/rfc792
+ */
+namespace ICMP_CM {
+    // type = 0
+    enum {
+        ECHO_REPLY
+    };
+
+    // type = 3
+    enum DESTINATION_UNREACHABLE {
+        NETWORK,
+        HOST,
+        PROTOCOL,
+        PORT,
+        FRAG_REQ,
+        SRC_ROUTE_FAILED,
+        NETWORK_UNKNOWN,
+        HOST_UNKNOWN,
+        SOURCE_HOST_ISOLATED,
+        NETWORK_ADMINISTRATIVELY_PROHIBITED,
+        HOST_ADMINISTRATIVELY_PROHIBITED,
+        NETWORK_UNREACHABLE_FOR_TOS,
+        HOST_UNREACHABLE_FOR_TOS,
+    };
+
+    // type = 4 (deprecated)
+    enum SOURCE_QUENCH {
+
+    };
+
+    // type = 5
+    enum REDIRECT_MESSAGE {
+
+    };
+
+    // type = 8
+    enum ECHO_REQUEST {
+
+    };
+
+    // type = 9
+    enum ROUTER_ADVERTISEMENT {
+
+    };
+
+    // type = 10
+    enum ROUTER_SOLICITATION {
+        
+    };
+
+    // type = 11
+    enum TIME_EXCEEDED {
+
+    };
+
+    // type = 12
+    enum TIMESTAMP {
+
+    };
+};
+
+/**
+ * @enum: SOCKET_TYPE
+ * @enumerator: TCP = SOCK_STREAM
+ * @enumerator: UDP = SOCK_DGRAM
+ * @enumerator: RAW = SOCK_RAW
+ * @enumerator: SEQ = SOCK_SEQPACKET
+ * @enumerator: RDM = SOCK_RDM
  */
 enum SOCKET_TYPE {
     TCP = SOCK_STREAM,
@@ -209,7 +244,7 @@ enum SOCKET_TYPE {
 /**
  * Relevant socket structs for packets and such.
  */
-struct ip_header_struct {
+struct IP_HEADER_STRUCT {
 
 }; 
 
@@ -225,11 +260,10 @@ struct UDP_HEADER_STRUCT {
  * We can simply define m_socket like m_socket(DEFAULT_SOCKET_VAL) instead.
  *
  */
-#if defined (__NIX)
-	#define DEFAULT_SOCKET_VAL -1
-#else
-	#define DEFAULT_SOCKET_VAL INVALID_SOCKET
-	#define WIN32_LEAN_AND_MEAN
+#if defined (PREDEF_PLATFORM_LINUX)
+#    define DEFAULT_SOCKET_VAL -1
+#elif defined(PREDEF_PLATFORM_WINDOWS)
+#    define DEFAULT_SOCKET_VAL INVALID_SOCKET
 #endif
 
 /**
@@ -257,39 +291,39 @@ struct UDP_HEADER_STRUCT {
 #endif
 
 /**
- * SocketException class
- *
+ * @class: SocketException
+ * @parent: (public) std::exception
  * @credits: http://stackoverflow.com/questions/8152720/correct-way-to-inherit-from-stdexception
- *
  */
 class SocketException : public std::exception {
 public:
     /** 
-     * Constructor (C strings).
-     * @param message C-style string error message.
-     *                 The string contents are copied upon construction.
-     *                 Hence, responsibility for deleting the char* lies
-     *                 with the caller.
-     *                 
+     * @function: SocketException 
+     * @class: SocketException
+     * @param: (const char*) format - message C-style string error message.
+     *                                The string contents are copied upon construction.
+     *                                Hence, responsibility for deleting the char* lies
+     *                                with the caller.
      */
-    explicit SocketException(const char* fmt, ...) {
+    explicit SocketException(const char* format, ...) {
         va_list ap;
-        va_start(ap, fmt);
-        this->init(fmt, ap);
+        va_start(ap, format);
+        this->init(format, ap);
         va_end(ap);
     }
 
     /** 
-     * Constructor (C++ STL strings).
-     * @param message The error message.
+     * @function: SocketException 
+     * @class: SocketException
+     * @param: (const std::string&) message - exception message.
      */
     explicit SocketException(const std::string& message):
         msg_(message)
     {}
     
     /** 
-     * Destructor.
-     * Virtual to allow for subclassing.
+     * @function: ~SocketException
+     * @class: SocketException
      */
     virtual ~SocketException() throw() {}
     
@@ -300,10 +334,9 @@ public:
     using std::exception::what;
 
     /** 
-     * Returns a pointer to the (constant) error description.
-     * @return A pointer to a const char*. The underlying memory
-     *          is in posession of the Exception object. Callers must
-     *          not attempt to free the memory.
+     * @function: what
+     * @class: SocketException
+     * @return: const char*
      */
     virtual const char* what() throw() {
         return msg_.c_str();
@@ -316,7 +349,10 @@ protected:
     std::string msg_;
     
     /**
-     *
+     * @function: init
+     * @class: SocketException
+     * @param: (const char*) format
+     * @param: (va_list) ap
      */
     void init(const char* fmt, va_list ap) {
         char errbuf[ 256 ];
@@ -326,89 +362,166 @@ protected:
 };
 
 /**
- * Base socket class. 
- * Templatizing this makes it so we don't have to create
- * a parent base socket class and derived classes for each
- * socket type where we'd end up redefining and rewriting
- * a lot of the same code.
+ * @class: Socket
+ * @description: 
+ *  Base socket class. 
+ *  Templatizing this makes it so we don't have to create
+ *  a parent base socket class and derived classes for each
+ *  socket type. We'd end up redefining and rewriting
+ *  a lot of the same code.
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 class Socket {
 protected:
     
     /**
-     * Hostname to connect to.
+     * @membervar: (std::string) m_hostname
+     * @class: Socket
+     * @accessor: protected
      */
     std::string m_hostname;
     
     /**
-     * Port number to connect on.
+     * @membervar: (uint16_t) m_port
+     * @class: Socket
+     * @accessor: protected
      */
     uint16_t m_port;
     
     /**
-     * Recv buffer size.
+     * @membervar: (uint16_t) m_buf_size - Receiving buffer size.
+     * @class: Socket
+     * @accessor: protected
      */
     uint16_t m_buf_size;
     
     /**
-     * Structure where connection info will be stored.
-     * @TODO: implement ipv6 support.
+     * @membervar: (sockadd_in) m_sockaddr
+     * @class: Socket
+     * @accessor: protected
      */
     struct sockaddr_in m_sockaddr;
+
+    /**
+     * @membervar: (sockadd_in) m_client_sockaddr
+     * @class: Socket
+     * @accessor: protected
+     */
     struct sockaddr_in m_client_sockaddr;
     
     /**
-     * Address family.
+     * @membervar: (int) m_af - Address family.
+     * @class: Socket
+     * @accessor: protected
      */
     int m_af;
 
     /**
-     * Maximum backlog size.
+     * @membervar: (int) m_backlog
+     * @class: Socket
+     * @accessor: protected
      */
     int m_backlog;
 
     /**
-     * Protocol.
-     * See /etc/protocols for some possible values.
+     * @membervar: (int) m_protocol
+     * @class: Socket
+     * @accessor: protected
      */
     int m_protocol;
     
     /**
-     *
+     * @membervar: (struct pollfd) m_pfd[ 1 ]
+     * @class: Socket
+     * @accessor: protected
      */
     struct pollfd m_pfd[ 1 ];
 
     /**
-     *
+     * @membervar: (char*) m_client_addr
+     * @class: Socket
+     * @accessor: protected
      */
     char* m_client_addr;
     
     /**
-     * If the current system is *nix or darwin
+     * If the current platform is *nix or darwin
      */
-#if defined(__NIX)
+#if defined(PREDEF_PLATFORM_LINUX)
     
     /**
-     * Socket file descriptor.
+     * @membervar: (int) m_socket
+     * @accessor: protected
+     * @platform: linux
      */
     int m_socket;
-    int m_tcp_socket;
 
+    /**
+     * @membervar: (int) m_tcp_socket
+     * @accessor: protected
+     * @platform: linux
+     */
+    int m_tcp_socket;
+    
+    /**
+     * @membervar: (struct hostent*) m_host
+     * @accessor: protected
+     * @platform: linux
+     */
     struct hostent* m_host;
+    
+    /**
+     * @membervar: (struct hostent*) m_client_host
+     * @accessor: protected
+     * @platform: linux
+     */
     struct hostent* m_client_host;
 
     /**
-     * Else the system is windows.
+     * Or the platform is windows.
      */
-#else
+#elif defined(PREDEF_PLATFORM_WINDOWS)
 
+    /**
+     * @membervar: (SOCKET) m_result
+     * @accessor: protected
+     * @platform: windows 
+     */
     SOCKET  m_socket;
+
+    /**
+     * @membervar: (SOCKET) m_result
+     * @accessor: protected
+     * @platform: windows 
+     */
 	SOCKET  m_socket_client;
+
+    /**
+     * @membervar: (SOCKET) m_result
+     * @accessor: protected
+     * @platform: windows 
+     */
     WSADATA m_wsa;
 
-	struct addrinfo *m_result;
-	struct addrinfo *m_ptr;
+    /**
+     * @membervar: (struct addrinfo*) m_result
+     * @accessor: protected
+     * @platform: windows 
+     */
+	struct addrinfo* m_result;
+
+    /**
+     * @membervar: (struct addrinfo*) m_ptr
+     * @accessor: protected
+     * @platform: windows 
+     */
+	struct addrinfo* m_ptr;
+
+    /**
+     * @membervar: (struct addrinfo*) m_hints
+     * @accessor: protected
+     * @platform: windows
+     */
 	struct addrinfo  m_hints;
 
 #endif
@@ -419,7 +532,13 @@ protected:
 public:
     
     /**
-     * Constructors.
+     * @function: Socket 
+     * @class: Socket
+     * @param: (const uint16_t&) port 
+     * @param: (int) (default: 0) protocol 
+     * @accessor: public
+     * @description:
+     *  Explicitly disconnect during destruction.
      */
     Socket(const uint16_t& port, int protocol = 0):
         m_port(port),
@@ -429,6 +548,16 @@ public:
         m_socket(DEFAULT_SOCKET_VAL)
     {}
 
+    /**
+     * @function: Socket 
+     * @class: Socket
+     * @param: (const std::string&) hostname
+     * @param: (const uint16_t&) port 
+     * @param: (int) (default: 0) protocol 
+     * @accessor: public
+     * @description:
+     *  Explicitly disconnect during destruction.
+     */
     Socket(const std::string& hostname, const uint16_t& port, int protocol = 0):
         m_hostname(hostname),
         m_port(port),
@@ -438,6 +567,16 @@ public:
         m_socket(DEFAULT_SOCKET_VAL)
     {}
     
+    /**
+     * @function: Socket 
+     * @class: Socket
+     * @param: (const std::string&) hostname
+     * @param: (const std::string&) port 
+     * @param: (int) (default: 0) protocol 
+     * @accessor: public
+     * @description:
+     *  Explicitly disconnect during destruction.
+     */
     Socket(const std::string& hostname, const std::string& port, int protocol = 0):
         m_hostname(hostname),
         m_port(std::stoi(port)),
@@ -448,7 +587,9 @@ public:
     {}
     
     /**
-     * Destructor.
+     * @function: ~Socket
+     * @class: Socket
+     * @accessor: public
      */
     ~Socket();
     
@@ -477,7 +618,10 @@ public:
     void set_protocol      (const int        & protocol) { m_protocol   = protocol;           }
 
     /**
-     * Getters
+     * @function: handle
+     * @class: Socket
+     * @return: pollfd*
+     * @accessor: public
      */
     pollfd* handle() {
         return m_pfd;
@@ -485,7 +629,10 @@ public:
 };
 
 /**
- * Explicitly disconnect during destruction.
+ * @function: ~Socket
+ * @class: Socket
+ * @description:
+ *  Explicitly disconnect during destruction.
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 Socket<socket_t, proc_t>::~Socket() {
@@ -493,8 +640,11 @@ Socket<socket_t, proc_t>::~Socket() {
 }
 
 /**
- * Calls the correct connect function (server or client)
- * based on the value of m_proc_type
+ * @function: connect
+ * @class: Socket
+ * @description:
+ *  Calls the correct connect function (server or client)
+ *  based on the value of m_proc_type
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::connect() {
@@ -526,17 +676,19 @@ void Socket<socket_t, proc_t>::connect() {
 }
 
 /**
- * Closes the socket if it's open
+ * @function: disconnect
+ * @class: Socket
+ * @description: Closes the socket if it's open.
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::disconnect() {
    DEBUG_STDOUT("disconnecting socket"); 
 
-#if defined(__NIX)
+#if defined(PREDEF_PLATFORM_LINUX)
     if(m_socket != -1) {
         close(m_socket);
     }
-#else
+#elif defined(PREDEF_PLATFORM_WINDOWS)
     if (m_result != NULL) {
         freeaddrinfo(m_result);
     }
@@ -546,7 +698,10 @@ void Socket<socket_t, proc_t>::disconnect() {
 }
 
 /**
- * Makes a 3-way TCP handshake (Minimum number of packets: 3)
+ * @functon: connect_server
+ * @class: Socket
+ * @description:
+ *  Makes a 3-way TCP handshake (Minimum number of packets: 3)
  *
  *  1. SERVER: socket(), bind(), listen()
  *
@@ -573,7 +728,7 @@ void Socket<socket_t, proc_t>::connect_server() {
 
     DEBUG_STDOUT("creating socket");
     
-#if defined(__NIX)
+#if defined(PREDEF_PLATFORM_LINUX)
     m_socket = socket(m_af, socket_t, m_protocol);
     
     /**
@@ -602,13 +757,17 @@ void Socket<socket_t, proc_t>::connect_server() {
      * SO_REUSEPORT needs to be set if the current linux kernel version is >= 3.9
      */
 #ifdef SO_REUSEPORT
+    
     DEBUG_STDOUT("setting SO_REUSEPORT (requirement since kernel version >= 3.9");
+
     if(setsockopt(m_socket, SOL_SOCKET, SO_REUSEPORT, (const void*)&toggle, sizeof(toggle)) == -1) {
         throw SocketException("setsockopt SO_REUSEPORT failed: %s", std::strerror(errno));
     } 
+
 #endif
 
     DEBUG_STDOUT("setting memory segment size of struct sockaddr_in to 0");
+
     /**
      * Set all bytes of m_host to zero. memset() is MT-Safe
      * See: http://man7.org/linux/man-pages/man3/memset.3.html
@@ -641,7 +800,7 @@ void Socket<socket_t, proc_t>::connect_server() {
         listen(m_socket, m_backlog);
     }
     
-#else
+#elif defined(PREDEF_PLATFORM_WINDOWS)
     /**
      * Initiate the use of Winsock DLL
      */
@@ -671,12 +830,13 @@ void Socket<socket_t, proc_t>::connect_server() {
         disconnect();
         throw SocketException("socket failed with error: %ld", WSAGetLastError());
     }
-    
 #endif
 }
 
 /**
- * Establishes a client connection.
+ * @function: connect_client
+ * @class: Socket
+ * @description: Establishes a client connection.
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::connect_client() {
@@ -694,7 +854,7 @@ void Socket<socket_t, proc_t>::connect_client() {
         throw SocketException("hostname isn't defined");
     }
     
-#if defined(__NIX)
+#if defined(PREDEF_PLATFORM_LINUX)
     m_socket = socket(m_af, socket_t, m_protocol);
     
     if(m_socket == -1) {
@@ -750,7 +910,7 @@ void Socket<socket_t, proc_t>::connect_client() {
         }
     }
     
-#else
+#elif defined(PREDEF_PLATFORM_WINDOWS)
     /**
      * @TODO: implement winsock
      */
@@ -758,10 +918,10 @@ void Socket<socket_t, proc_t>::connect_client() {
 }
 
 /**
- * ready
- *  @param (const uint32_t&) events - poll events
- *
- *  @return bool
+ * @function: ready
+ * @class: Socket
+ * @param: (const uint32_t&) events - poll events
+ * @return: bool
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 bool Socket<socket_t, proc_t>::ready(const uint32_t& events) {
@@ -769,11 +929,11 @@ bool Socket<socket_t, proc_t>::ready(const uint32_t& events) {
 }
 
 /**
- * set_blocking
- *  @param (int ) fd       - file descriptor
- *  @param (bool) blocking - blocking flag
- *
- *  @return bool
+ * @function: set_blocking
+ * @class: Socket
+ * @param: (int) fd - file descriptor
+ * @param: (bool) blocking - blocking flag
+ * @return: bool
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 bool Socket<socket_t, proc_t>::set_blocking(int fd, bool blocking) {
@@ -786,12 +946,8 @@ bool Socket<socket_t, proc_t>::set_blocking(int fd, bool blocking) {
     DEBUG_STDOUT("setting socket blocking to: " + std::to_string(blocking));
     
     uint32_t rc = -1;
-    
-#ifdef __WIN
-    uint32_t mode = blocking ? 0 : 1;
-             rc   = ioctlsocket(fd, FIONBIO, &mode)
-    
-#else
+
+#if defined(PREDEF_PLATFORM_LINUX) 
     int32_t flags = fcntl(fd, F_GETFL, 0);
     
     if(flags < 0) {
@@ -801,14 +957,18 @@ bool Socket<socket_t, proc_t>::set_blocking(int fd, bool blocking) {
     flags = (blocking ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK));
     rc    = fcntl(fd, F_SETFL, flags);
     
+#elif defined(PREDEF_PLATFORM_WINDOWS)
+    uint32_t mode = blocking ? 0 : 1;
+             rc   = ioctlsocket(fd, FIONBIO, &mode)
+    
 #endif
     return (rc == 0 ? true : false);
 }
 
 /**
- * recieve
- *
- *  @return std::string
+ * @function: receive
+ * @class: Socket
+ * @return: std::string
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 std::string Socket<socket_t, proc_t>::receive() {
@@ -817,7 +977,7 @@ std::string Socket<socket_t, proc_t>::receive() {
     socklen_t sock_size = sizeof(struct sockaddr_in);
     memset(buffer, 0, m_buf_size);
     
-#if defined(__NIX)
+#if defined(PREDEF_PLATFORM_LINUX)
     /**
      * TCP
      */
@@ -895,7 +1055,7 @@ std::string Socket<socket_t, proc_t>::receive() {
     else if(socket_t == RAW) {
 
     }
-#else
+#elif defined(PREDEF_PLATFORM_WINDOWS)
     /**
      * @TODO: implement send functionality for Windows
      */
@@ -904,11 +1064,10 @@ std::string Socket<socket_t, proc_t>::receive() {
 }
 
 /**
- * send
- *  @param (const std::string&) message - message to send
- *  @param (bool) OOB - out of bounds
- *
- *  @return ssize_t
+ * @function: send
+ * @param (const std::string&) message - message to send
+ * @param (bool) (default: false) OOB - out of bounds
+ * @return ssize_t
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
@@ -921,7 +1080,7 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
     ssize_t bytes_sent = 0;
     int socket = (socket_t == UDP ? m_socket : m_tcp_socket);    
 
-#if defined(__NIX)
+#if defined(PREDEF_PLATFORM_LINUX)
     DEBUG_STDOUT("sending " + std::to_string(message.size()) + " bytes of data");
 
     if(socket_t == TCP) {
@@ -951,7 +1110,7 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
            throw SocketException("sendto failed: %s", std::strerror(errno));
         }
     }
-#else
+#elif defined(PREDEF_PLATFORM_WINDOWS)
     /**
      * @TODO: implement send functionality for Windows
      */
@@ -959,4 +1118,61 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
     return bytes_sent;
 }
 
+/**
+ *          osi model                   ip suite
+ *       +------------------+       +------------------+                          (application details)
+ * (7) - |   application    |       |                  |                                    ^
+ *       +------------------+       |                  |                   (user process)   |
+ * (6) - |   presentation   |       | application      |                         ^          |
+ *       +------------------+       |                  |                         |          |
+ * (5) - |     session      |       |                  |                         |          |
+ *       +------------------+ <---> +-----+------+-----+ <----- sockets (xti) ---+----------+
+ * (4) - |    transport     |       | tcp |      | udp |                         |          |
+ *       +------------------+       +-----+------+-----+                         |          |
+ * (3) - |     network      |       |    ipv4 - ipv6   |                         v          |
+ *       +------------------+       +------------------+                      (kernel)      |
+ * (2) - |     datalink     |       |      device      |                                    v
+ *       +------------------+       |      driver      |                          (communication details)
+ * (1) - |     physical     |       |     hardware     |
+ *       +------------------+       +------------------+
+ *
+ *
+ *
+ * type bit values for lp 32/64 arch models
+ * +-----------+-------------+------------+
+ * | data type | ilp32 model | lp64 model |
+ * +-----------+-------------+------------+
+ * | char      | 8           | 8          |
+ * | short     | 16          | 16         |
+ * | int       | 32          | 32         |
+ * | long      | 32          | 64         |
+ * | pointer   | 32          | 64         |
+ * +-----------+-------------+------------+
+ *
+ * - protocols
+ *      * ipv4   - (32 bit addresses) provides packet delivery service for tcp, udp, sctp, icmp, and igmp.
+ *      * ipv6   - (128 bit addresses) replacement for ipv4. provides delivery service for for tcp, udp, sctp, and icmpv6.
+ *      * tcp    - transmission control protocol.
+ *      * udp    - user datagram protocol.
+ *      * sctp   - stream control transmission protocol.
+ *      * icmp   - internet control message protocol.
+ *      * igmp   - internet group management protocol.
+ *      * arp    - address resolution protocol.
+ *      * rarp   - reverse address resolution protocol.
+ *      * icmpv6 - internet control message protocol version 6.
+ *      * bpf    - bsd packet filter.
+ *      * dlpi   - datalink provider interface.
+ *
+ *
+ * - USEFUL AND INFORMATIVE LINKS:
+ *  http://linux.die.net/man/3/setsockopt - options for setsockopt
+ *
+ * - Cross platform header files
+ *  <exception> - Is used for creating our custom socket exception classes.
+ *  <cstdint>   - Is used for int typedefs.
+ *  <cstdarg>   - Is used for va_list in SocketException
+ *  <string>    - Is used so VS doesn't bitch when writing a simple line like 'std::cout << string << std::endl;'
+ *  <cstring>   - Is used for std::strerror instead of strerror because g++ throws template related errors otherwise. 
+ *
+ */
 #endif
