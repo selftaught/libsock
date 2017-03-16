@@ -29,7 +29,7 @@
 #endif
 
 /**
- * WINDOWS 
+ * WINDOWS
  * @resource: https://msdn.microsoft.com/en-us/library/b0084kay.aspx
  */
 #if defined(_WIN32) || defined(_WIN64)
@@ -66,7 +66,7 @@
 
 /**
  * @include: <netdb.h>
- * @reference: http://pubs.opengroup.org/onlinepubs/7908799/xns/netdb.h.html  
+ * @reference: http://pubs.opengroup.org/onlinepubs/7908799/xns/netdb.h.html
  * @platform: linux/darwin
  */
 #include <netdb.h>
@@ -97,7 +97,7 @@
 
 /**
  * @include: <unistd.h>
- * @reference: http://pubs.opengroup.org/onlinepubs/7908799/xsh/unistd.h.html 
+ * @reference: http://pubs.opengroup.org/onlinepubs/7908799/xsh/unistd.h.html
  * (standard symbolic constants and types)
  * @platform: linux/darwin
  */
@@ -138,7 +138,7 @@
 #endif
 
 /**
- * 
+ *
  */
 #define POLL_EXPIRE 0
 
@@ -211,7 +211,7 @@ namespace ICMP_CM {
 
     // type = 10
     enum ROUTER_SOLICITATION {
-        
+
     };
 
     // type = 11
@@ -246,7 +246,7 @@ enum SOCKET_TYPE {
  */
 struct IP_HEADER_STRUCT {
 
-}; 
+};
 
 struct UDP_HEADER_STRUCT {
 
@@ -297,8 +297,8 @@ struct UDP_HEADER_STRUCT {
  */
 class SocketException : public std::exception {
 public:
-    /** 
-     * @function: SocketException 
+    /**
+     * @function: SocketException
      * @class: SocketException
      * @param: (const char*) format - message C-style string error message.
      *                                The string contents are copied upon construction.
@@ -312,28 +312,28 @@ public:
         va_end(ap);
     }
 
-    /** 
-     * @function: SocketException 
+    /**
+     * @function: SocketException
      * @class: SocketException
      * @param: (const std::string&) message - exception message.
      */
     explicit SocketException(const std::string& message):
         msg_(message)
     {}
-    
-    /** 
+
+    /**
      * @function: ~SocketException
      * @class: SocketException
      */
     virtual ~SocketException() throw() {}
-    
+
     /**
      * Need to use std::exception::what otherwise
      * g++ will generate these warnings: 'hides overloaded virtual function'
      */
     using std::exception::what;
 
-    /** 
+    /**
      * @function: what
      * @class: SocketException
      * @return: const char*
@@ -341,13 +341,13 @@ public:
     virtual const char* what() throw() {
         return msg_.c_str();
     }
-    
+
 protected:
     /**
      * Error message.
      */
     std::string msg_;
-    
+
     /**
      * @function: init
      * @class: SocketException
@@ -363,8 +363,8 @@ protected:
 
 /**
  * @class: Socket
- * @description: 
- *  Base socket class. 
+ * @description:
+ *  Base socket class.
  *  Templatizing this makes it so we don't have to create
  *  a parent base socket class and derived classes for each
  *  socket type. We'd end up redefining and rewriting
@@ -373,28 +373,28 @@ protected:
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 class Socket {
 protected:
-    
+
     /**
      * @membervar: (std::string) m_hostname
      * @class: Socket
      * @accessor: protected
      */
     std::string m_hostname;
-    
+
     /**
      * @membervar: (uint16_t) m_port
      * @class: Socket
      * @accessor: protected
      */
     uint16_t m_port;
-    
+
     /**
      * @membervar: (uint16_t) m_buf_size - Receiving buffer size.
      * @class: Socket
      * @accessor: protected
      */
     uint16_t m_buf_size;
-    
+
     /**
      * @membervar: (sockadd_in) m_sockaddr
      * @class: Socket
@@ -408,7 +408,7 @@ protected:
      * @accessor: protected
      */
     struct sockaddr_in m_client_sockaddr;
-    
+
     /**
      * @membervar: (int) m_af - Address family.
      * @class: Socket
@@ -429,7 +429,7 @@ protected:
      * @accessor: protected
      */
     int m_protocol;
-    
+
     /**
      * @membervar: (struct pollfd) m_pfd[ 1 ]
      * @class: Socket
@@ -443,12 +443,12 @@ protected:
      * @accessor: protected
      */
     char* m_client_addr;
-    
+
     /**
      * If the current platform is *nix or darwin
      */
 #if defined(PREDEF_PLATFORM_LINUX)
-    
+
     /**
      * @membervar: (int) m_socket
      * @accessor: protected
@@ -462,14 +462,14 @@ protected:
      * @platform: linux
      */
     int m_tcp_socket;
-    
+
     /**
      * @membervar: (struct hostent*) m_host
      * @accessor: protected
      * @platform: linux
      */
     struct hostent* m_host;
-    
+
     /**
      * @membervar: (struct hostent*) m_client_host
      * @accessor: protected
@@ -485,35 +485,35 @@ protected:
     /**
      * @membervar: (SOCKET) m_result
      * @accessor: protected
-     * @platform: windows 
+     * @platform: windows
      */
     SOCKET  m_socket;
 
     /**
      * @membervar: (SOCKET) m_result
      * @accessor: protected
-     * @platform: windows 
+     * @platform: windows
      */
 	SOCKET  m_socket_client;
 
     /**
      * @membervar: (SOCKET) m_result
      * @accessor: protected
-     * @platform: windows 
+     * @platform: windows
      */
     WSADATA m_wsa;
 
     /**
      * @membervar: (struct addrinfo*) m_result
      * @accessor: protected
-     * @platform: windows 
+     * @platform: windows
      */
 	struct addrinfo* m_result;
 
     /**
      * @membervar: (struct addrinfo*) m_ptr
      * @accessor: protected
-     * @platform: windows 
+     * @platform: windows
      */
 	struct addrinfo* m_ptr;
 
@@ -525,17 +525,17 @@ protected:
 	struct addrinfo  m_hints;
 
 #endif
-    
+
     void connect_server();
     void connect_client();
-    
+
 public:
-    
+
     /**
-     * @function: Socket 
+     * @function: Socket
      * @class: Socket
-     * @param: (const uint16_t&) port 
-     * @param: (int) (default: 0) protocol 
+     * @param: (const uint16_t&) port
+     * @param: (int) (default: 0) protocol
      * @accessor: public
      * @description:
      *  Explicitly disconnect during destruction.
@@ -549,11 +549,11 @@ public:
     {}
 
     /**
-     * @function: Socket 
+     * @function: Socket
      * @class: Socket
      * @param: (const std::string&) hostname
-     * @param: (const uint16_t&) port 
-     * @param: (int) (default: 0) protocol 
+     * @param: (const uint16_t&) port
+     * @param: (int) (default: 0) protocol
      * @accessor: public
      * @description:
      *  Explicitly disconnect during destruction.
@@ -566,13 +566,13 @@ public:
         m_protocol(protocol),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
-    
+
     /**
-     * @function: Socket 
+     * @function: Socket
      * @class: Socket
      * @param: (const std::string&) hostname
-     * @param: (const std::string&) port 
-     * @param: (int) (default: 0) protocol 
+     * @param: (const std::string&) port
+     * @param: (int) (default: 0) protocol
      * @accessor: public
      * @description:
      *  Explicitly disconnect during destruction.
@@ -585,28 +585,28 @@ public:
         m_protocol(protocol),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
-    
+
     /**
      * @function: ~Socket
      * @class: Socket
      * @accessor: public
      */
     ~Socket();
-    
+
     /**
      * Member function prototypes.
      */
     void init();
     void disconnect();
     void connect();
-    
+
     bool ready(const uint32_t&);
     bool set_blocking(int, bool blocking = false);
-    
+
     std::string receive();
-    
+
     ssize_t send(const std::string&, bool OOB = false);
-    
+
     /**
      * Setters
      */
@@ -660,17 +660,17 @@ void Socket<socket_t, proc_t>::connect() {
     else if(socket_t == UDP) {
         m_buf_size = UDP_RECV_BUF_LEN;
     }
-    
+
     if(proc_t == UNDEF) {
         throw SocketException("undefined service type");
     }
-    
+
          if(proc_t == SERVER) { connect_server(); }
     else if(proc_t == CLIENT) { connect_client(); }
     else {
         throw SocketException("invalid service type");
     }
-    
+
     m_pfd[ 0 ].fd     = m_socket;
     m_pfd[ 0 ].events = POLLIN;
 }
@@ -682,7 +682,7 @@ void Socket<socket_t, proc_t>::connect() {
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::disconnect() {
-   DEBUG_STDOUT("disconnecting socket"); 
+   DEBUG_STDOUT("disconnecting socket");
 
 #if defined(PREDEF_PLATFORM_LINUX)
     if(m_socket != -1) {
@@ -692,7 +692,7 @@ void Socket<socket_t, proc_t>::disconnect() {
     if (m_result != NULL) {
         freeaddrinfo(m_result);
     }
-    
+
     WSACleanup();
 #endif
 }
@@ -716,7 +716,7 @@ void Socket<socket_t, proc_t>::disconnect() {
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::connect_server() {
-    
+
     DEBUG_STDOUT("starting server connection");
 
     /**
@@ -727,10 +727,10 @@ void Socket<socket_t, proc_t>::connect_server() {
     }
 
     DEBUG_STDOUT("creating socket");
-    
+
 #if defined(PREDEF_PLATFORM_LINUX)
     m_socket = socket(m_af, socket_t, m_protocol);
-    
+
     /**
      * Throw an exception if the socket connection failed.
      */
@@ -741,28 +741,28 @@ void Socket<socket_t, proc_t>::connect_server() {
     DEBUG_STDOUT("successfully established a socket connection");
 
     /**
-     * @TODO: Implement support and abstraction for setting 
+     * @TODO: Implement support and abstraction for setting
      *        and getting multiple options. This particular
-     *        option (SO_REUSEADDR) allows forcing binding 
+     *        option (SO_REUSEADDR) allows forcing binding
      *        so we don't have to wait to bind if there's
-     *        already a socket  
+     *        already a socket
      */
     const int toggle = 1;
-    
+
     if(setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (const void*)&toggle, sizeof(toggle)) == -1) {
         throw SocketException("setsockopt SO_REUSEADDR failed: %s", std::strerror(errno));
-    } 
+    }
 
     /**
      * SO_REUSEPORT needs to be set if the current linux kernel version is >= 3.9
      */
 #ifdef SO_REUSEPORT
-    
+
     DEBUG_STDOUT("setting SO_REUSEPORT (requirement since kernel version >= 3.9");
 
     if(setsockopt(m_socket, SOL_SOCKET, SO_REUSEPORT, (const void*)&toggle, sizeof(toggle)) == -1) {
         throw SocketException("setsockopt SO_REUSEPORT failed: %s", std::strerror(errno));
-    } 
+    }
 
 #endif
 
@@ -773,14 +773,14 @@ void Socket<socket_t, proc_t>::connect_server() {
      * See: http://man7.org/linux/man-pages/man3/memset.3.html
      */
     memset(m_host, sizeof(struct sockaddr_in), 0);
-    
+
     /**
      * Connection info.
      */
     m_sockaddr.sin_family      = m_af;
     m_sockaddr.sin_addr.s_addr = INADDR_ANY;
     m_sockaddr.sin_port        = htons(m_port);
-    
+
     /**
      * If binding fails, throw an exception.
      */
@@ -790,7 +790,7 @@ void Socket<socket_t, proc_t>::connect_server() {
     }
 
     DEBUG_STDOUT("socket bind() was successful!");
-    
+
     /**
      * If this is a TCP server then we need to
      * put the socket in listening mode.
@@ -799,33 +799,33 @@ void Socket<socket_t, proc_t>::connect_server() {
         DEBUG_STDOUT("listening for incoming tcp connections");
         listen(m_socket, m_backlog);
     }
-    
+
 #elif defined(PREDEF_PLATFORM_WINDOWS)
     /**
      * Initiate the use of Winsock DLL
      */
     int err = WSAStartup(MAKEWORD(2, 2), &m_wsa);
-    
+
     if (err != 0) {
         throw SocketException("WSAStartup failed: %d", err);
     }
-    
+
     ZeroMemory(&m_hints, sizeof(m_hints));
-    
+
     m_hints.ai_family	= m_af;
     m_hints.ai_socktype = m_type;
     m_hints.ai_protocol = m_protocol;
     m_hints.ai_flags	= AI_PASSIVE;
-    
+
     err = getaddrinfo(NULL, std::to_string(m_port).c_str(), &m_hints, &m_result);
-    
+
     if (err != 0) {
         disconnect();
         throw SocketException("getaddrinfo failed: %d", err);
     }
-    
+
     m_socket = socket(m_result->ai_family, m_result->ai_socktype, m_result->ai_protocol);
-    
+
     if (m_socket == INVALID_SOCKET) {
         disconnect();
         throw SocketException("socket failed with error: %ld", WSAGetLastError());
@@ -846,53 +846,53 @@ void Socket<socket_t, proc_t>::connect_client() {
     if(!m_port) {
         throw SocketException("port isn't defined");
     }
-    
+
     /**
      * Throw an exception if the hostname hasn't be defined by the user.
      */
     if(m_hostname.empty()) {
         throw SocketException("hostname isn't defined");
     }
-    
+
 #if defined(PREDEF_PLATFORM_LINUX)
     m_socket = socket(m_af, socket_t, m_protocol);
-    
+
     if(m_socket == -1) {
         throw SocketException("socket failed: %s", std::strerror(errno));
     }
-    
+
     /**
      * So that we can re-bind to it without TIME_WAIT problems
      */
     int ra = 1;
     int rc = setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &ra, sizeof(ra));
-    
+
     if(rc == -1) {
         throw SocketException("setsockopt failed: %s", std::strerror(errno));
     }
-    
+
     set_blocking(m_socket, false);
-    
+
     m_host = gethostbyname(m_hostname.c_str());
-    
+
     if(m_host == NULL) {
         disconnect();
         throw SocketException("gethostbyname failed: %s", std::strerror(h_errno));
     }
-    
+
     /**
      * Zero out m_sockaddr struct and then copy the
      * host address to it's sin_addr member variable.
      */
     memset(&m_sockaddr, 0, sizeof(struct sockaddr_in));
     bcopy((char*)m_host->h_addr, (char*)&m_sockaddr.sin_addr, m_host->h_length);
-    
+
     /**
      * Set address family and port.
      */
     m_sockaddr.sin_family = m_af;
     m_sockaddr.sin_port   = htons(m_port);
-    
+
     /**
      * TCP
      */
@@ -909,7 +909,7 @@ void Socket<socket_t, proc_t>::connect_client() {
             throw SocketException("bind failed: %s", std::strerror(errno));
         }
     }
-    
+
 #elif defined(PREDEF_PLATFORM_WINDOWS)
     /**
      * @TODO: implement winsock
@@ -937,30 +937,29 @@ bool Socket<socket_t, proc_t>::ready(const uint32_t& events) {
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 bool Socket<socket_t, proc_t>::set_blocking(int fd, bool blocking) {
-    
     if(fd < 0) {
         DEBUG_STDOUT("fd (file descriptor) is < 0 - failed to update the sockets blocking state");
         return false;
     }
 
     DEBUG_STDOUT("setting socket blocking to: " + std::to_string(blocking));
-    
+
     uint32_t rc = -1;
 
-#if defined(PREDEF_PLATFORM_LINUX) 
+#if defined(PREDEF_PLATFORM_LINUX)
     int32_t flags = fcntl(fd, F_GETFL, 0);
-    
+
     if(flags < 0) {
         return false;
     }
-    
+
     flags = (blocking ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK));
     rc    = fcntl(fd, F_SETFL, flags);
-    
+
 #elif defined(PREDEF_PLATFORM_WINDOWS)
     uint32_t mode = blocking ? 0 : 1;
              rc   = ioctlsocket(fd, FIONBIO, &mode)
-    
+
 #endif
     return (rc == 0 ? true : false);
 }
@@ -972,28 +971,25 @@ bool Socket<socket_t, proc_t>::set_blocking(int fd, bool blocking) {
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 std::string Socket<socket_t, proc_t>::receive() {
-        
     char buffer[ m_buf_size ];
     socklen_t sock_size = sizeof(struct sockaddr_in);
     memset(buffer, 0, m_buf_size);
-    
+
 #if defined(PREDEF_PLATFORM_LINUX)
     /**
      * TCP
      */
     if(socket_t == TCP) {
         /**
-         * Server 
+         * Server
          */
         if(proc_t == SERVER) {
             DEBUG_STDOUT("accepting connection from client...");
             m_tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
-            
             if(m_tcp_socket == -1) {
                 close(m_tcp_socket);
                 throw SocketException("accept failed: %s", std::strerror(errno));
             }
-            
             if(read(m_tcp_socket, &buffer, m_buf_size) == -1) {
                 close(m_tcp_socket);
                 throw SocketException("read failed: %s", std::strerror(errno));
@@ -1012,11 +1008,11 @@ std::string Socket<socket_t, proc_t>::receive() {
         }
     }
     /**
-     * UDP 
+     * UDP
      */
     else if(socket_t == UDP) {
         /**
-         * Server 
+         * Server
          */
         if(proc_t == SERVER) {
             DEBUG_STDOUT("calling recvfrom");
@@ -1046,7 +1042,7 @@ std::string Socket<socket_t, proc_t>::receive() {
         else {
            /**
             * @TODO: implement UDP client recv functionality
-            */ 
+            */
         }
     }
     /**
@@ -1076,15 +1072,15 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
             throw SocketException("socket not connected");
         }
     }
-    
+
     ssize_t bytes_sent = 0;
-    int socket = (socket_t == UDP ? m_socket : m_tcp_socket);    
+    int socket = (socket_t == UDP ? m_socket : m_tcp_socket);
 
 #if defined(PREDEF_PLATFORM_LINUX)
     DEBUG_STDOUT("sending " + std::to_string(message.size()) + " bytes of data");
 
     if(socket_t == TCP) {
-        bytes_sent = write(socket, message.c_str(), strlen(message.c_str())); 
+        bytes_sent = write(socket, message.c_str(), strlen(message.c_str()));
 
         if(bytes_sent == -1) {
            throw SocketException("sendto failed: %s", std::strerror(errno));
