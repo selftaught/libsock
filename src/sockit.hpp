@@ -8,6 +8,8 @@
 #include <string>
 #include <cstring>
 #include <errno.h>
+#include <string>
+#include <vector>
 
 /**
  * Make sure __cplusplus is defined because it's value will tell us what version of
@@ -166,65 +168,65 @@ enum PROC_TYPE {
  * @reference: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
  * @reference: https://tools.ietf.org/html/rfc792
  */
-namespace ICMP_CM {
-    // type = 0
-    enum {
-        ECHO_REPLY
-    };
-
-    // type = 3
-    enum DESTINATION_UNREACHABLE {
-        NETWORK,
-        HOST,
-        PROTOCOL,
-        PORT,
-        FRAG_REQ,
-        SRC_ROUTE_FAILED,
-        NETWORK_UNKNOWN,
-        HOST_UNKNOWN,
-        SOURCE_HOST_ISOLATED,
-        NETWORK_ADMINISTRATIVELY_PROHIBITED,
-        HOST_ADMINISTRATIVELY_PROHIBITED,
-        NETWORK_UNREACHABLE_FOR_TOS,
-        HOST_UNREACHABLE_FOR_TOS,
-    };
-
-    // type = 4 (deprecated)
-    enum SOURCE_QUENCH {
-
-    };
-
-    // type = 5
-    enum REDIRECT_MESSAGE {
-
-    };
-
-    // type = 8
-    enum ECHO_REQUEST {
-
-    };
-
-    // type = 9
-    enum ROUTER_ADVERTISEMENT {
-
-    };
-
-    // type = 10
-    enum ROUTER_SOLICITATION {
-
-    };
-
-    // type = 11
-    enum TIME_EXCEEDED {
-
-    };
-
-    // type = 12
-    enum TIMESTAMP {
-
-    };
-};
-
+//namespace ICMP_CM {
+//    // type = 0
+//    enum {
+//        ECHO_REPLY
+//    };
+//
+//    // type = 3
+//    enum DESTINATION_UNREACHABLE {
+//        NETWORK,
+//        HOST,
+//        PROTOCOL,
+//        PORT,
+//        FRAG_REQ,
+//        SRC_ROUTE_FAILED,
+//        NETWORK_UNKNOWN,
+//        HOST_UNKNOWN,
+//        SOURCE_HOST_ISOLATED,
+//        NETWORK_ADMINISTRATIVELY_PROHIBITED,
+//        HOST_ADMINISTRATIVELY_PROHIBITED,
+//        NETWORK_UNREACHABLE_FOR_TOS,
+//        HOST_UNREACHABLE_FOR_TOS,
+//    };
+//
+//    // type = 4 (deprecated)
+//    enum SOURCE_QUENCH {
+//
+//    };
+//
+//    // type = 5
+//    enum REDIRECT_MESSAGE {
+//
+//    };
+//
+//    // type = 8
+//    enum ECHO_REQUEST {
+//
+//    };
+//
+//    // type = 9
+//    enum ROUTER_ADVERTISEMENT {
+//
+//    };
+//
+//    // type = 10
+//    enum ROUTER_SOLICITATION {
+//
+//    };
+//
+//    // type = 11
+//    enum TIME_EXCEEDED {
+//
+//    };
+//
+//    // type = 12
+//    enum TIMESTAMP {
+//
+//    };
+//};
+//
 /**
  * @enum: SOCKET_TYPE
  * @enumerator: TCP = SOCK_STREAM
@@ -239,17 +241,6 @@ enum SOCKET_TYPE {
     RAW = SOCK_RAW,
     SEQ = SOCK_SEQPACKET,
     RDM = SOCK_RDM
-};
-
-/**
- * Relevant socket structs for packets and such.
- */
-struct IP_HEADER_STRUCT {
-
-};
-
-struct UDP_HEADER_STRUCT {
-
 };
 
 /**
@@ -362,13 +353,36 @@ protected:
 };
 
 /**
+ * @class: SocketResponseHeaders
+ * @description:
+ *  Object where HTTP response headers are stored.
+ */
+class SocketResponseHeaders {
+    protected:
+        //std::map<const std::string&, char> m_headers;
+
+    public:
+        SocketResponseHeaders() {};
+        ~SocketResponseHeaders() {};
+
+        /**
+         *
+         */
+        void add(const std::string& header) {
+//            std::map<const std::string&, const char>::const_iterator got = m_headers.find(header);
+//
+//            if (got != m_headers.end()) {
+//                m_headers.insert(
+//                    std::pair<const std::string&, char>(header, 0x01)
+//                );
+//            }
+        }
+};
+
+/**
  * @class: Socket
  * @description:
  *  Base socket class.
- *  Templatizing this makes it so we don't have to create
- *  a parent base socket class and derived classes for each
- *  socket type. We'd end up redefining and rewriting
- *  a lot of the same code.
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 class Socket {
@@ -443,6 +457,11 @@ protected:
      * @accessor: protected
      */
     char* m_client_addr;
+
+    /**
+     * Response headers
+     */
+    SocketResponseHeaders m_headers;
 
     /**
      * If the current platform is *nix or darwin
@@ -605,7 +624,12 @@ public:
 
     std::string receive();
 
+    ssize_t send();
     ssize_t send(const std::string&, bool OOB = false);
+
+    SocketResponseHeaders& headers() {
+        return m_headers;
+    }
 
     /**
      * Setters
@@ -642,7 +666,7 @@ Socket<socket_t, proc_t>::~Socket() {
 /**
  * @function: connect
  * @class: Socket
- * @description:
+ * @descrition:
  *  Calls the correct connect function (server or client)
  *  based on the value of m_proc_type
  */
@@ -671,8 +695,8 @@ void Socket<socket_t, proc_t>::connect() {
         throw SocketException("invalid service type");
     }
 
-    m_pfd[ 0 ].fd     = m_socket;
-    m_pfd[ 0 ].events = POLLIN;
+    m_pfd[0].fd     = m_socket;
+    m_pfd[0].events = POLLIN;
 }
 
 /**
@@ -758,7 +782,7 @@ void Socket<socket_t, proc_t>::connect_server() {
      */
 #ifdef SO_REUSEPORT
 
-    DEBUG_STDOUT("setting SO_REUSEPORT (requirement since kernel version >= 3.9");
+    DEBUG_STDOUT("setting SO_REUSEPORT (requirement since kernel version >= 3.9)");
 
     if(setsockopt(m_socket, SOL_SOCKET, SO_REUSEPORT, (const void*)&toggle, sizeof(toggle)) == -1) {
         throw SocketException("setsockopt SO_REUSEPORT failed: %s", std::strerror(errno));
@@ -1061,6 +1085,18 @@ std::string Socket<socket_t, proc_t>::receive() {
 
 /**
  * @function: send
+ * @description: builds a response string from the values in m_headers and send that response.
+ * @return ssize_t
+ */
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+ssize_t Socket<socket_t, proc_t>::send() {
+    // @TODO: iterate over m_headers and build a response.
+    std::string response = "HTTP/1.1 200 OK\r\n\r\n<html><body>foobar</body></html>";
+    return send(response, false);
+}
+
+/**
+ * @function: send
  * @param (const std::string&) message - message to send
  * @param (bool) (default: false) OOB - out of bounds
  * @return ssize_t
@@ -1078,6 +1114,7 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
 
 #if defined(PREDEF_PLATFORM_LINUX)
     DEBUG_STDOUT("sending " + std::to_string(message.size()) + " bytes of data");
+    DEBUG_STDOUT("data: " + message);
 
     if(socket_t == TCP) {
         bytes_sent = write(socket, message.c_str(), strlen(message.c_str()));
