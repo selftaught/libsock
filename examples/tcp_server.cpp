@@ -2,7 +2,7 @@
 #include <sockit.hpp>
 
 void help();
-void tcp_server(const uint16_t&, std::string host = "localhost");
+void tcp_server(const uint16_t&, std::string host = "127.0.0.1");
 
 int main(int argc, char ** argv) {
     int opt = 0;
@@ -76,7 +76,10 @@ void tcp_server(const uint16_t& port, std::string host) {
                         std::cout << "received " << received.length() << " bytes\n";
                         std::cout << "message: \n\n" << received << std::endl;
 
-                        socket.send("<html><body><h1>Got it!</h1></body></html>");
+                        socket.headers().add("Content-Type: text/html");
+                        socket.headers().add("Transfer-Encoding: chunked");
+                        socket.headers().add("Content:<html><body><h1>Got it!</h1></body></html>");
+                        socket.send();
                     }
                 }
                 catch(SocketException e) {
