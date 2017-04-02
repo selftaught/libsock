@@ -76,9 +76,9 @@ void tcp_server(const uint16_t& port, std::string host) {
                         std::cout << "received " << received.length() << " bytes\n";
                         std::cout << "message: \n\n" << received << std::endl;
 
-                        socket.headers().add("Content-Type: text/html");
-                        socket.headers().add("Transfer-Encoding: chunked");
-                        socket.headers().add("Content:<html><body><h1>Got it!</h1></body></html>");
+                        socket.headers()->add("Content-Type: text/html");
+                        socket.headers()->add("Transfer-Encoding: chunked");
+                        socket.headers()->add("Content:<html><body><h1>Got it!</h1></body></html>");
                         socket.send();
                     }
                 }

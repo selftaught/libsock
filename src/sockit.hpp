@@ -353,29 +353,24 @@ protected:
 };
 
 /**
- * @class: SocketResponseHeaders
+ * @class: Headers
  * @description:
  *  Object where HTTP response headers are stored.
  */
-class SocketResponseHeaders {
+class Headers {
     protected:
-        //std::map<const std::string&, char> m_headers;
+        std::vector<std::string> m_headers;
 
     public:
-        SocketResponseHeaders() {};
-        ~SocketResponseHeaders() {};
+        Headers() {}
+        ~Headers() {};
 
-        /**
-         *
-         */
+        std::vector<std::string> get() {
+            return m_headers;
+        }
+
         void add(const std::string& header) {
-//            std::map<const std::string&, const char>::const_iterator got = m_headers.find(header);
-//
-//            if (got != m_headers.end()) {
-//                m_headers.insert(
-//                    std::pair<const std::string&, char>(header, 0x01)
-//                );
-//            }
+            m_headers.push_back(header);
         }
 };
 
@@ -461,7 +456,7 @@ protected:
     /**
      * Response headers
      */
-    SocketResponseHeaders m_headers;
+    Headers* m_headers;
 
     /**
      * If the current platform is *nix or darwin
@@ -564,6 +559,7 @@ public:
         m_af(AF_INET),
         m_backlog(5),
         m_protocol(protocol),
+        m_headers(new Headers()),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
 
@@ -583,6 +579,7 @@ public:
         m_af(AF_INET),
         m_backlog(5),
         m_protocol(protocol),
+        m_headers(new Headers()),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
 
@@ -602,6 +599,7 @@ public:
         m_af(AF_INET),
         m_backlog(5),
         m_protocol(protocol),
+        m_headers(new Headers()),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
 
@@ -627,7 +625,10 @@ public:
     ssize_t send();
     ssize_t send(const std::string&, bool OOB = false);
 
-    SocketResponseHeaders& headers() {
+    /**
+     * Getters / accessors
+     */
+    Headers* headers() {
         return m_headers;
     }
 
@@ -707,6 +708,10 @@ void Socket<socket_t, proc_t>::connect() {
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::disconnect() {
    DEBUG_STDOUT("disconnecting socket");
+
+    if (m_headers != NULL) {
+        delete m_headers;
+    }
 
 #if defined(PREDEF_PLATFORM_LINUX)
     if(m_socket != -1) {
@@ -848,7 +853,11 @@ void Socket<socket_t, proc_t>::connect_server() {
         throw SocketException("getaddrinfo failed: %d", err);
     }
 
-    m_socket = socket(m_result->ai_family, m_result->ai_socktype, m_result->ai_protocol);
+    m_socket = socket(
+        m_result->ai_family,
+        m_result->ai_socktype,
+        m_result->ai_protocol
+    );
 
     if (m_socket == INVALID_SOCKET) {
         disconnect();
