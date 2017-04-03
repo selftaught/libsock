@@ -167,66 +167,11 @@ enum PROC_TYPE {
  * ICMP control message enums.
  * @reference: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
  * @reference: https://tools.ietf.org/html/rfc792
- */
-//namespace ICMP_CM {
-//    // type = 0
-//    enum {
-//        ECHO_REPLY
-//    };
-//
-//    // type = 3
-//    enum DESTINATION_UNREACHABLE {
-//        NETWORK,
-//        HOST,
-//        PROTOCOL,
-//        PORT,
-//        FRAG_REQ,
-//        SRC_ROUTE_FAILED,
-//        NETWORK_UNKNOWN,
-//        HOST_UNKNOWN,
-//        SOURCE_HOST_ISOLATED,
-//        NETWORK_ADMINISTRATIVELY_PROHIBITED,
-//        HOST_ADMINISTRATIVELY_PROHIBITED,
-//        NETWORK_UNREACHABLE_FOR_TOS,
-//        HOST_UNREACHABLE_FOR_TOS,
-//    };
-//
-//    // type = 4 (deprecated)
-//    enum SOURCE_QUENCH {
-//
-//    };
-//
-//    // type = 5
-//    enum REDIRECT_MESSAGE {
-//
-//    };
-//
-//    // type = 8
-//    enum ECHO_REQUEST {
-//
-//    };
-//
-//    // type = 9
-//    enum ROUTER_ADVERTISEMENT {
-//
-//    };
-//
-//    // type = 10
-//    enum ROUTER_SOLICITATION {
-//
-//    };
-//
-//    // type = 11
-//    enum TIME_EXCEEDED {
-//
-//    };
-//
-//    // type = 12
-//    enum TIMESTAMP {
-//
-//    };
-//};
-//
+namespace ICMP_CM {
+
+};
+*/
+
 /**
  * @enum: SOCKET_TYPE
  * @enumerator: TCP = SOCK_STREAM
@@ -352,27 +297,6 @@ protected:
     }
 };
 
-/**
- * @class: Headers
- * @description:
- *  Object where HTTP response headers are stored.
- */
-class Headers {
-    protected:
-        std::vector<std::string> m_headers;
-
-    public:
-        Headers() {}
-        ~Headers() {};
-
-        std::vector<std::string> get() {
-            return m_headers;
-        }
-
-        void add(const std::string& header) {
-            m_headers.push_back(header);
-        }
-};
 
 /**
  * @class: Socket
@@ -452,11 +376,6 @@ protected:
      * @accessor: protected
      */
     char* m_client_addr;
-
-    /**
-     * Response headers
-     */
-    Headers* m_headers;
 
     /**
      * If the current platform is *nix or darwin
@@ -559,7 +478,6 @@ public:
         m_af(AF_INET),
         m_backlog(5),
         m_protocol(protocol),
-        m_headers(new Headers()),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
 
@@ -579,7 +497,6 @@ public:
         m_af(AF_INET),
         m_backlog(5),
         m_protocol(protocol),
-        m_headers(new Headers()),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
 
@@ -599,7 +516,6 @@ public:
         m_af(AF_INET),
         m_backlog(5),
         m_protocol(protocol),
-        m_headers(new Headers()),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
 
@@ -622,15 +538,7 @@ public:
 
     std::string receive();
 
-    ssize_t send();
     ssize_t send(const std::string&, bool OOB = false);
-
-    /**
-     * Getters / accessors
-     */
-    Headers* headers() {
-        return m_headers;
-    }
 
     /**
      * Setters
@@ -708,10 +616,6 @@ void Socket<socket_t, proc_t>::connect() {
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::disconnect() {
    DEBUG_STDOUT("disconnecting socket");
-
-    if (m_headers != NULL) {
-        delete m_headers;
-    }
 
 #if defined(PREDEF_PLATFORM_LINUX)
     if(m_socket != -1) {
@@ -914,6 +818,59 @@ void Socket<socket_t, proc_t>::connect_client() {
     }
 
     /**
+     *
+     * @TODO:
+     *
+     *
+     *
+    if (socket_t == UDP) {
+        struct addrinfo hints;
+        struct addrinfo *result, *rp;
+        int sfd, s, j;
+        size_t len;
+        ssize_t nread;
+        char buf[BUF_SIZE];
+
+        memset(&hints, 0, sizeof(struct addrinfo));
+        hints.ai_family   = AF_UNSPEC;
+        hints.ai_socktype = socket_t; 
+        hints.ai_flags    = 0;
+        hints.ai_protocol = 0;
+
+        s = getaddrinfo((char*)m_host->h_addr, htons(m_port), &hints, &result);
+
+        if (s != 0) {
+            throw SocketException("getaddrinfo call was not successful!");
+        }
+
+        for (rp = result; rp != NULL; rp = rp->ai_next) {
+            sfd = socket(
+                rp->ai_family,
+                rp->ai_socktype,
+                rp->ai_protocol
+            );
+
+            if (sfd == -1) {
+                continue;
+            }
+
+            if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) {
+                break;
+            }
+
+            close(sfd);
+        }
+
+        if (rp == NULL) {
+            throw SocketException("Couldn't connect to any addresses returned by getaddrinfo()!");
+        }
+
+        freeaddrinfo(result);
+    }
+    */
+
+
+    /**
      * Zero out m_sockaddr struct and then copy the
      * host address to it's sin_addr member variable.
      */
@@ -1094,18 +1051,6 @@ std::string Socket<socket_t, proc_t>::receive() {
 
 /**
  * @function: send
- * @description: builds a response string from the values in m_headers and send that response.
- * @return ssize_t
- */
-template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-ssize_t Socket<socket_t, proc_t>::send() {
-    // @TODO: iterate over m_headers and build a response.
-    std::string response = "HTTP/1.1 200 OK\r\n\r\n<html><body>foobar</body></html>";
-    return send(response, false);
-}
-
-/**
- * @function: send
  * @param (const std::string&) message - message to send
  * @param (bool) (default: false) OOB - out of bounds
  * @return ssize_t
@@ -1159,6 +1104,8 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
 #endif
     return bytes_sent;
 }
+
+typedef Socket<TCP, SERVER> TcpServer;
 
 /**
  *          osi model                   ip suite
