@@ -13,8 +13,8 @@ class WebServer : public TcpServer {
         std::vector<std::string> m_headers;
 
     public:
-        ~WebServer();
-        
+        WebServer(const std::string& host, const uint16_t& port) : TcpServer(host, port) {};
+
         void run();
 };
 

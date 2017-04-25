@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+namespace libsockit {};
+
 /**
  * Make sure __cplusplus is defined because it's value will tell us what version of
  * C++ the compiler supports. It's value should be <= 199711L in pre-C++11 compilers.
