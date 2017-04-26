@@ -1,13 +1,11 @@
 #ifndef __leafs_macaddr_hpp
 #define __leafs_macaddr_hpp
 
-#include "leafs.hpp"
-
-namespace libsockit {
-    namespace leafs {
+namespace Libsockit {
+    namespace Leafs {
         class MAC {
+            protected:
             private:
-
             public:
         };
     };
