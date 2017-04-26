@@ -3,35 +3,37 @@
 
 #include "../base.hpp"
 
-namespace Libsock {
-    namespace Protocols {
-        template<SERVICE_TYPE service_t>
-        class TCP : public SockBase<SOCK_TYPE::TCP, service_t> {
-            protected:
-            private:
-            public:
-                TCP() {};
+namespace Libsock { namespace Protocols {
+    template<SERVICE_TYPE service_t>
+    class TCP : public SockBase<SOCK_TYPE::TCP, service_t> {
+        protected:
+        private:
+        public:
+            TCP() {}
 
-                TCP(const std::string& _host):
-                    SockBase<SOCK_TYPE::TCP, service_t>(_host)
-                {};
+            TCP(const std::string& _host):
+                SockBase<SOCK_TYPE::TCP, service_t>(_host)
+            {}
 
-                TCP(const std::string& _host, const uint16_t& _port):
-                    SockBase<SOCK_TYPE::TCP, service_t>(_host, _port)
-                {};
+            TCP(const std::string& _host, const uint16_t& _port):
+                SockBase<SOCK_TYPE::TCP, service_t>(_host, _port)
+            {}
 
-                void connect_server();
-                void connect_client();
+            void connect();
+            std::string receive();
+			ssize_t send(const std::string&, bool oob = 0);
+    };
 
-                std::string receive();
-        };
+    /**
+     *
+     *
+     */
+    template<SERVICE_TYPE service_t>
+    void TCP<service_t>::connect() {
 
-        /**
-         *
-         *
-         */
-        template<SERVICE_TYPE service_t>
-        void TCP<service_t>::connect_server() {
+        this->m_buf_size = TCP_RECV_BUF_LEN;
+
+        if (service_t == SERVER) {
             DEBUG_STDOUT("starting server connection");
 
             // Throw an exception if the port hasn't be defined by the user.
@@ -129,9 +131,7 @@ namespace Libsock {
             }
 #endif
         }
-
-        template<SERVICE_TYPE service_t>
-        void TCP<service_t>::connect_client() {
+        else if (service_t == CLIENT) {
             // Throw an exception if the port hasn't be defined by the user.
             if(!this->m_port) {
                 throw SockException("port isn't defined");
@@ -182,47 +182,85 @@ namespace Libsock {
 #elif defined(PREDEF_PLATFORM_WINDOWS)
             // @TODO: implement winsock
 #endif
-
+        }
+        else if (service_t == UNDEF) {
+            throw SockException("invalid service type");
         }
 
-        /**
-         *
-         * 
-         */
-        template<SERVICE_TYPE service_t>
-        std::string TCP<service_t>::receive() {
-            char buffer[m_buf_size];
-            socklen_t sock_size = sizeof(struct sockaddr_in);
-            memset(buffer, 0, m_buf_size);
+        this->m_pfd[0].fd     = this->m_socket;
+        this->m_pfd[0].events = POLLIN;
+    }
+
+    /**
+     *
+     *
+     */
+    template<SERVICE_TYPE service_t>
+    std::string TCP<service_t>::receive() {
+        char buffer[this->m_buf_size];
+        socklen_t sock_size = sizeof(struct sockaddr_in);
+        memset(buffer, 0, this->m_buf_size);
 
 #if defined(PREDEF_PLATFORM_LINUX)
-            if(servicec_t == SERVER) {
-                DEBUG_STDOUT("accepting connection from client...");
-                m_tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
-                if(m_tcp_socket == -1) {
-                    close(m_tcp_socket);
-                    throw SockException("accept failed: %s", std::strerror(errno));
-                }
-                if(read(m_tcp_socket, &buffer, m_buf_size) == -1) {
-                    close(m_tcp_socket);
-                    throw SockException("read failed: %s", std::strerror(errno));
-                }
+        if(service_t == SERVER) {
+            DEBUG_STDOUT("accepting connection from client...");
+            this->m_tcp_socket = accept(this->m_socket, (struct sockaddr*)&this->m_sockaddr, &sock_size);
+            if(this->m_tcp_socket == -1) {
+                close(this->m_tcp_socket);
+                throw SockException("accept failed: %s", std::strerror(errno));
             }
-            else {
-                DEBUG_STDOUT("listening for a response from the server...");
-
-                if(read(m_socket, buffer, m_buf_size) == -1) {
-                    close(m_socket);
-                    throw SockException("read failed: %s", std::strerror(errno));
-                }
+            if(read(this->m_tcp_socket, &buffer, this->m_buf_size) == -1) {
+                close(this->m_tcp_socket);
+                throw SockException("read failed: %s", std::strerror(errno));
             }
-#elif defined(PREDEF_PLATFORM_WINDOWS)
-            // @TODO: implement send functionality for Windows
-#endif
-            return std::string(buffer);
         }
-    };
-};
+        else {
+            DEBUG_STDOUT("listening for a response from the server...");
+
+            if(read(this->m_socket, buffer, this->m_buf_size) == -1) {
+                close(this->m_socket);
+                throw SockException("read failed: %s", std::strerror(errno));
+            }
+        }
+#elif defined(PREDEF_PLATFORM_WINDOWS)
+        // @TODO: implement send functionality for Windows
+#endif
+        return std::string(buffer);
+    }
+
+    /**
+     *
+     *
+     */
+	template<SERVICE_TYPE service_t>
+	ssize_t TCP<service_t>::send(const std::string& message, bool oob) {
+        if(service_t == SERVER) {
+            if(this->m_tcp_socket == -1) {
+                throw SockException("socket not connected");
+            }
+        }
+
+        ssize_t bytes_sent = 0;
+
+#if defined(PREDEF_PLATFORM_LINUX)
+        DEBUG_STDOUT("sending " + std::to_string(message.size()) + " bytes of data");
+        DEBUG_STDOUT("data: " + message);
+
+		bytes_sent = write(this->m_tcp_socket, message.c_str(), strlen(message.c_str()));
+
+		if(bytes_sent == -1) {
+		   throw SockException("sendto failed: %s", std::strerror(errno));
+		}
+
+		// Close the TCP child socket otherwise the request will hang.
+		DEBUG_STDOUT("closing connection...");
+		close(this->m_tcp_socket);
+#elif defined(PREDEF_PLATFORM_WINDOWS)
+        // @TODO: implement send functionality for Windows
+#endif
+        return bytes_sent;
+	}
+};};
 
 typedef Libsock::Protocols::TCP<Libsock::SERVICE_TYPE::SERVER> TCPServer;
 typedef Libsock::Protocols::TCP<Libsock::SERVICE_TYPE::CLIENT> TCPClient;
