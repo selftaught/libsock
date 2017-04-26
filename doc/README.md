@@ -1,2 +1,2 @@
-# libsockit
+# libsock
 

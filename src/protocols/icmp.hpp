@@ -3,7 +3,7 @@
 
 #include "../sock_raw.hpp"
 
-namespace Libsockit {
+namespace Libsock {
     namespace Protocols {
         class ICMP {
             protected:

@@ -3,7 +3,7 @@
 
 #include "../sock_base.hpp"
 
-namespace Libsockit {
+namespace Libsock {
     namespace Protocols {
         template<SERVICE_TYPE service_t>
         class TCP : public SockBase<TCP, service_t> {

@@ -4,7 +4,7 @@
 #include "../sock/raw.hpp"
 #include "../leafs/macaddr.hpp"
 
-namespace Libsockit {
+namespace Libsock {
     namespace Protocols {
         namespace ARP {
 
