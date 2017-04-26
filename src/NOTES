@@ -1,0 +1,57 @@
+/**
+ *          osi model                   ip suite
+ *       +------------------+       +------------------+                          (application details)
+ * (7) - |   application    |       |                  |                                    ^
+ *       +------------------+       |                  |                   (user process)   |
+ * (6) - |   presentation   |       | application      |                         ^          |
+ *       +------------------+       |                  |                         |          |
+ * (5) - |     session      |       |                  |                         |          |
+ *       +------------------+ <---> +-----+------+-----+ <----- sockets (xti) ---+----------+
+ * (4) - |    transport     |       | tcp |      | udp |                         |          |
+ *       +------------------+       +-----+------+-----+                         |          |
+ * (3) - |     network      |       |    ipv4 - ipv6   |                         v          |
+ *       +------------------+       +------------------+                      (kernel)      |
+ * (2) - |     datalink     |       |      device      |                                    v
+ *       +------------------+       |      driver      |                          (communication details)
+ * (1) - |     physical     |       |     hardware     |
+ *       +------------------+       +------------------+
+ *
+ *
+ *
+ * type bit values for lp 32/64 arch models
+ * +-----------+-------------+------------+
+ * | data type | ilp32 model | lp64 model |
+ * +-----------+-------------+------------+
+ * | char      | 8           | 8          |
+ * | short     | 16          | 16         |
+ * | int       | 32          | 32         |
+ * | long      | 32          | 64         |
+ * | pointer   | 32          | 64         |
+ * +-----------+-------------+------------+
+ *
+ * - protocols
+ *      * ipv4   - (32 bit addresses) provides packet delivery service for tcp, udp, sctp, icmp, and igmp.
+ *      * ipv6   - (128 bit addresses) replacement for ipv4. provides delivery service for for tcp, udp, sctp, and icmpv6.
+ *      * tcp    - transmission control protocol.
+ *      * udp    - user datagram protocol.
+ *      * sctp   - stream control transmission protocol.
+ *      * icmp   - internet control message protocol.
+ *      * igmp   - internet group management protocol.
+ *      * arp    - address resolution protocol.
+ *      * rarp   - reverse address resolution protocol.
+ *      * icmpv6 - internet control message protocol version 6.
+ *      * bpf    - bsd packet filter.
+ *      * dlpi   - datalink provider interface.
+ *
+ *
+ * - USEFUL AND INFORMATIVE LINKS:
+ *  http://linux.die.net/man/3/setsockopt - options for setsockopt
+ *
+ * - Cross platform header files
+ *  <exception> - Is used for creating our custom socket exception classes.
+ *  <cstdint>   - Is used for int typedefs.
+ *  <cstdarg>   - Is used for va_list in SockException
+ *  <string>    - Is used so VS doesn't bitch when writing a simple line like 'std::cout << string << std::endl;'
+ *  <cstring>   - Is used for std::strerror instead of strerror because g++ throws template related errors otherwise. 
+ *
+ */

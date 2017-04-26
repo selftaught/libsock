@@ -1,5 +1,5 @@
-#ifndef __sockit_hpp
-#define __sockit_hpp
+#ifndef __sock_base_hpp
+#define __sock_base_hpp
 
 #include <iostream>
 #include <exception>
@@ -11,7 +11,11 @@
 #include <string>
 #include <vector>
 
-namespace libsockit {};
+#include "sock_exception.hpp"
+
+namespace Libsock {
+    class SockBase;
+};
 
 /**
  * Make sure __cplusplus is defined because it's value will tell us what version of
@@ -153,36 +157,27 @@ namespace libsockit {};
 #define TCP_RECV_BUF_LEN 1500
 
 /**
- * @enum: PROC_TYPE
+ * @enum: SERVICE_TYPE
  * @enumerator: UNDEF = 0
  * @enumerator: CLIENT = 1
  * @enumerator: SERVER = 2
- * @description: Process type.
+ * @description: SockBase service type.
  */
-enum PROC_TYPE {
+enum SERVICE_TYPE {
     UNDEF,
     CLIENT,
     SERVER
 };
 
 /**
- * ICMP control message enums.
- * @reference: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
- * @reference: https://tools.ietf.org/html/rfc792
-namespace ICMP_CM {
-
-};
-*/
-
-/**
- * @enum: SOCKET_TYPE
+ * @enum: SOCK_TYPE
  * @enumerator: TCP = SOCK_STREAM
  * @enumerator: UDP = SOCK_DGRAM
  * @enumerator: RAW = SOCK_RAW
  * @enumerator: SEQ = SOCK_SEQPACKET
  * @enumerator: RDM = SOCK_RDM
  */
-enum SOCKET_TYPE {
+enum SOCK_TYPE {
     TCP = SOCK_STREAM,
     UDP = SOCK_DGRAM,
     RAW = SOCK_RAW,
@@ -193,7 +188,7 @@ enum SOCKET_TYPE {
 /**
  * Define the default socket value. This is done because without
  * it, we'd have to add preprocessor conditions to each constructor
- * of Socket checking and defining m_socket based on the current
+ * of SockBase checking and defining m_socket based on the current
  * system. However, by define DEFAULT_SOCKET_VAL, we don't need to do that.
  * We can simply define m_socket like m_socket(DEFAULT_SOCKET_VAL) instead.
  *
@@ -228,153 +223,83 @@ enum SOCKET_TYPE {
     #define DEBUG_STDOUT(x)
 #endif
 
-/**
- * @class: SocketException
- * @parent: (public) std::exception
- * @credits: http://stackoverflow.com/questions/8152720/correct-way-to-inherit-from-stdexception
- */
-class SocketException : public std::exception {
-public:
-    /**
-     * @function: SocketException
-     * @class: SocketException
-     * @param: (const char*) format - message C-style string error message.
-     *                                The string contents are copied upon construction.
-     *                                Hence, responsibility for deleting the char* lies
-     *                                with the caller.
-     */
-    explicit SocketException(const char* format, ...) {
-        va_list ap;
-        va_start(ap, format);
-        this->init(format, ap);
-        va_end(ap);
-    }
-
-    /**
-     * @function: SocketException
-     * @class: SocketException
-     * @param: (const std::string&) message - exception message.
-     */
-    explicit SocketException(const std::string& message):
-        msg_(message)
-    {}
-
-    /**
-     * @function: ~SocketException
-     * @class: SocketException
-     */
-    virtual ~SocketException() throw() {}
-
-    /**
-     * Need to use std::exception::what otherwise
-     * g++ will generate these warnings: 'hides overloaded virtual function'
-     */
-    using std::exception::what;
-
-    /**
-     * @function: what
-     * @class: SocketException
-     * @return: const char*
-     */
-    virtual const char* what() throw() {
-        return msg_.c_str();
-    }
-
-protected:
-    /**
-     * Error message.
-     */
-    std::string msg_;
-
-    /**
-     * @function: init
-     * @class: SocketException
-     * @param: (const char*) format
-     * @param: (va_list) ap
-     */
-    void init(const char* fmt, va_list ap) {
-        char errbuf[ 256 ];
-        vsnprintf(errbuf, sizeof(errbuf), fmt, ap);
-        msg_ = errbuf;
-    }
-};
 
 
 /**
- * @class: Socket
+ * @class: SockBase
  * @description:
  *  Base socket class.
  */
-template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-class Socket {
+template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
+class SockBase {
 protected:
 
     /**
      * @membervar: (std::string) m_hostname
-     * @class: Socket
+     * @class: SockBase
      * @accessor: protected
      */
     std::string m_hostname;
 
     /**
      * @membervar: (uint16_t) m_port
-     * @class: Socket
+     * @class: SockBase
      * @accessor: protected
      */
     uint16_t m_port;
 
     /**
      * @membervar: (uint16_t) m_buf_size - Receiving buffer size.
-     * @class: Socket
+     * @class: SockBase
      * @accessor: protected
      */
     uint16_t m_buf_size;
 
     /**
      * @membervar: (sockadd_in) m_sockaddr
-     * @class: Socket
+     * @class: SockBase
      * @accessor: protected
      */
     struct sockaddr_in m_sockaddr;
 
     /**
      * @membervar: (sockadd_in) m_client_sockaddr
-     * @class: Socket
+     * @class: SockBase
      * @accessor: protected
      */
     struct sockaddr_in m_client_sockaddr;
 
     /**
      * @membervar: (int) m_af - Address family.
-     * @class: Socket
+     * @class: SockBase
      * @accessor: protected
      */
     int m_af;
 
     /**
      * @membervar: (int) m_backlog
-     * @class: Socket
+     * @class: SockBase
      * @accessor: protected
      */
     int m_backlog;
 
     /**
      * @membervar: (int) m_protocol
-     * @class: Socket
+     * @class: SockBase
      * @accessor: protected
      */
     int m_protocol;
 
     /**
      * @membervar: (struct pollfd) m_pfd[ 1 ]
-     * @class: Socket
+     * @class: SockBase
      * @accessor: protected
      */
     struct pollfd m_pfd[ 1 ];
 
     /**
      * @membervar: (char*) m_client_addr
-     * @class: Socket
+     * @class: SockBase
      * @accessor: protected
      */
     char* m_client_addr;
@@ -467,15 +392,15 @@ protected:
 public:
 
     /**
-     * @function: Socket
-     * @class: Socket
+     * @function: SockBase
+     * @class: SockBase
      * @param: (const uint16_t&) port
      * @param: (int) (default: 0) protocol
      * @accessor: public
      * @description:
      *  Explicitly disconnect during destruction.
      */
-    Socket(const uint16_t& port, int protocol = 0):
+    SockBase(const uint16_t& port, int protocol = 0):
         m_port(port),
         m_af(AF_INET),
         m_backlog(5),
@@ -484,8 +409,8 @@ public:
     {}
 
     /**
-     * @function: Socket
-     * @class: Socket
+     * @function: SockBase
+     * @class: SockBase
      * @param: (const std::string&) hostname
      * @param: (const uint16_t&) port
      * @param: (int) (default: 0) protocol
@@ -493,7 +418,7 @@ public:
      * @description:
      *  Explicitly disconnect during destruction.
      */
-    Socket(const std::string& hostname, const uint16_t& port, int protocol = 0):
+    SockBase(const std::string& hostname, const uint16_t& port, int protocol = 0):
         m_hostname(hostname),
         m_port(port),
         m_af(AF_INET),
@@ -503,8 +428,8 @@ public:
     {}
 
     /**
-     * @function: Socket
-     * @class: Socket
+     * @function: SockBase
+     * @class: SockBase
      * @param: (const std::string&) hostname
      * @param: (const std::string&) port
      * @param: (int) (default: 0) protocol
@@ -512,7 +437,7 @@ public:
      * @description:
      *  Explicitly disconnect during destruction.
      */
-    Socket(const std::string& hostname, const std::string& port, int protocol = 0):
+    SockBase(const std::string& hostname, const std::string& port, int protocol = 0):
         m_hostname(hostname),
         m_port(std::stoi(port)),
         m_af(AF_INET),
@@ -522,11 +447,11 @@ public:
     {}
 
     /**
-     * @function: ~Socket
-     * @class: Socket
+     * @function: ~SockBase
+     * @class: SockBase
      * @accessor: public
      */
-    ~Socket();
+    ~SockBase();
 
     /**
      * Member function prototypes.
@@ -554,7 +479,7 @@ public:
 
     /**
      * @function: handle
-     * @class: Socket
+     * @class: SockBase
      * @return: pollfd*
      * @accessor: public
      */
@@ -564,25 +489,25 @@ public:
 };
 
 /**
- * @function: ~Socket
- * @class: Socket
+ * @function: ~SockBase
+ * @class: SockBase
  * @description:
  *  Explicitly disconnect during destruction.
  */
-template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-Socket<socket_t, proc_t>::~Socket() {
+template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
+SockBase<socket_t, servicec_t>::~SockBase() {
     disconnect();
 }
 
 /**
  * @function: connect
- * @class: Socket
+ * @class: SockBase
  * @descrition:
  *  Calls the correct connect function (server or client)
- *  based on the value of m_proc_type
+ *  based on the value of m_servicec_type
  */
-template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-void Socket<socket_t, proc_t>::connect() {
+template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
+void SockBase<socket_t, servicec_t>::connect() {
     /**
      * TCP specific declarations
      */
@@ -596,14 +521,14 @@ void Socket<socket_t, proc_t>::connect() {
         m_buf_size = UDP_RECV_BUF_LEN;
     }
 
-    if(proc_t == UNDEF) {
-        throw SocketException("undefined service type");
+    if(servicec_t == UNDEF) {
+        throw SockException("undefined service type");
     }
 
-         if(proc_t == SERVER) { connect_server(); }
-    else if(proc_t == CLIENT) { connect_client(); }
+         if(servicec_t == SERVER) { connect_server(); }
+    else if(servicec_t == CLIENT) { connect_client(); }
     else {
-        throw SocketException("invalid service type");
+        throw SockException("invalid service type");
     }
 
     m_pfd[0].fd     = m_socket;
@@ -612,11 +537,11 @@ void Socket<socket_t, proc_t>::connect() {
 
 /**
  * @function: disconnect
- * @class: Socket
+ * @class: SockBase
  * @description: Closes the socket if it's open.
  */
-template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-void Socket<socket_t, proc_t>::disconnect() {
+template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
+void SockBase<socket_t, servicec_t>::disconnect() {
    DEBUG_STDOUT("disconnecting socket");
 
 #if defined(PREDEF_PLATFORM_LINUX)
@@ -634,7 +559,7 @@ void Socket<socket_t, proc_t>::disconnect() {
 
 /**
  * @functon: connect_server
- * @class: Socket
+ * @class: SockBase
  * @description:
  *  Makes a 3-way TCP handshake (Minimum number of packets: 3)
  *
@@ -649,8 +574,8 @@ void Socket<socket_t, proc_t>::disconnect() {
  *             it will send on the connection.
  *
  */
-template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-void Socket<socket_t, proc_t>::connect_server() {
+template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
+void SockBase<socket_t, servicec_t>::connect_server() {
 
     DEBUG_STDOUT("starting server connection");
 
@@ -658,7 +583,7 @@ void Socket<socket_t, proc_t>::connect_server() {
      * Throw an exception if the port hasn't be defined by the user.
      */
     if(!m_port) {
-        throw SocketException("port not defined");
+        throw SockException("port not defined");
     }
 
     DEBUG_STDOUT("creating socket");
@@ -670,7 +595,7 @@ void Socket<socket_t, proc_t>::connect_server() {
      * Throw an exception if the socket connection failed.
      */
     if(m_socket == -1) {
-        throw SocketException("socket failed: %s", std::strerror(errno));
+        throw SockException("socket failed: %s", std::strerror(errno));
     }
 
     DEBUG_STDOUT("successfully established a socket connection");
@@ -685,7 +610,7 @@ void Socket<socket_t, proc_t>::connect_server() {
     const int toggle = 1;
 
     if(setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (const void*)&toggle, sizeof(toggle)) == -1) {
-        throw SocketException("setsockopt SO_REUSEADDR failed: %s", std::strerror(errno));
+        throw SockException("setsockopt SO_REUSEADDR failed: %s", std::strerror(errno));
     }
 
     /**
@@ -696,7 +621,7 @@ void Socket<socket_t, proc_t>::connect_server() {
     DEBUG_STDOUT("setting SO_REUSEPORT (requirement since kernel version >= 3.9)");
 
     if(setsockopt(m_socket, SOL_SOCKET, SO_REUSEPORT, (const void*)&toggle, sizeof(toggle)) == -1) {
-        throw SocketException("setsockopt SO_REUSEPORT failed: %s", std::strerror(errno));
+        throw SockException("setsockopt SO_REUSEPORT failed: %s", std::strerror(errno));
     }
 
 #endif
@@ -721,7 +646,7 @@ void Socket<socket_t, proc_t>::connect_server() {
      */
     if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
         close(m_socket);
-        throw SocketException("bind failed: %s", std::strerror(errno));
+        throw SockException("bind failed: %s", std::strerror(errno));
     }
 
     DEBUG_STDOUT("socket bind() was successful!");
@@ -742,7 +667,7 @@ void Socket<socket_t, proc_t>::connect_server() {
     int err = WSAStartup(MAKEWORD(2, 2), &m_wsa);
 
     if (err != 0) {
-        throw SocketException("WSAStartup failed: %d", err);
+        throw SockException("WSAStartup failed: %d", err);
     }
 
     ZeroMemory(&m_hints, sizeof(m_hints));
@@ -756,7 +681,7 @@ void Socket<socket_t, proc_t>::connect_server() {
 
     if (err != 0) {
         disconnect();
-        throw SocketException("getaddrinfo failed: %d", err);
+        throw SockException("getaddrinfo failed: %d", err);
     }
 
     m_socket = socket(
@@ -767,37 +692,37 @@ void Socket<socket_t, proc_t>::connect_server() {
 
     if (m_socket == INVALID_SOCKET) {
         disconnect();
-        throw SocketException("socket failed with error: %ld", WSAGetLastError());
+        throw SockException("socket failed with error: %ld", WSAGetLastError());
     }
 #endif
 }
 
 /**
  * @function: connect_client
- * @class: Socket
+ * @class: SockBase
  * @description: Establishes a client connection.
  */
-template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-void Socket<socket_t, proc_t>::connect_client() {
+template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
+void SockBase<socket_t, servicec_t>::connect_client() {
     /**
      * Throw an exception if the port hasn't be defined by the user.
      */
     if(!m_port) {
-        throw SocketException("port isn't defined");
+        throw SockException("port isn't defined");
     }
 
     /**
      * Throw an exception if the hostname hasn't be defined by the user.
      */
     if(m_hostname.empty()) {
-        throw SocketException("hostname isn't defined");
+        throw SockException("hostname isn't defined");
     }
 
 #if defined(PREDEF_PLATFORM_LINUX)
     m_socket = socket(m_af, socket_t, m_protocol);
 
     if(m_socket == -1) {
-        throw SocketException("socket failed: %s", std::strerror(errno));
+        throw SockException("socket failed: %s", std::strerror(errno));
     }
 
     /**
@@ -807,7 +732,7 @@ void Socket<socket_t, proc_t>::connect_client() {
     int rc = setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &ra, sizeof(ra));
 
     if(rc == -1) {
-        throw SocketException("setsockopt failed: %s", std::strerror(errno));
+        throw SockException("setsockopt failed: %s", std::strerror(errno));
     }
 
     set_blocking(m_socket, false);
@@ -816,7 +741,7 @@ void Socket<socket_t, proc_t>::connect_client() {
 
     if(m_host == NULL) {
         disconnect();
-        throw SocketException("gethostbyname failed: %s", std::strerror(h_errno));
+        throw SockException("gethostbyname failed: %s", std::strerror(h_errno));
     }
 
     /**
@@ -842,7 +767,7 @@ void Socket<socket_t, proc_t>::connect_client() {
         s = getaddrinfo((char*)m_host->h_addr, htons(m_port), &hints, &result);
 
         if (s != 0) {
-            throw SocketException("getaddrinfo call was not successful!");
+            throw SockException("getaddrinfo call was not successful!");
         }
 
         for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -864,7 +789,7 @@ void Socket<socket_t, proc_t>::connect_client() {
         }
 
         if (rp == NULL) {
-            throw SocketException("Couldn't connect to any addresses returned by getaddrinfo()!");
+            throw SockException("Couldn't connect to any addresses returned by getaddrinfo()!");
         }
 
         freeaddrinfo(result);
@@ -891,14 +816,14 @@ void Socket<socket_t, proc_t>::connect_client() {
     if(socket_t == TCP) {
         if(::connect(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
             disconnect();
-            throw SocketException("connect failed: %s", std::strerror(errno));
+            throw SockException("connect failed: %s", std::strerror(errno));
         }
     }
     else if(socket_t == UDP) {
         socklen_t sock_size = sizeof(struct sockaddr*);
         if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sock_size) == -1) {
             disconnect();
-            throw SocketException("bind failed: %s", std::strerror(errno));
+            throw SockException("bind failed: %s", std::strerror(errno));
         }
     }
 
@@ -911,24 +836,24 @@ void Socket<socket_t, proc_t>::connect_client() {
 
 /**
  * @function: ready
- * @class: Socket
+ * @class: SockBase
  * @param: (const uint32_t&) events - poll events
  * @return: bool
  */
-template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-bool Socket<socket_t, proc_t>::ready(const uint32_t& events) {
+template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
+bool SockBase<socket_t, servicec_t>::ready(const uint32_t& events) {
     return !(m_pfd[ 0 ].events & events);
 }
 
 /**
  * @function: set_blocking
- * @class: Socket
+ * @class: SockBase
  * @param: (int) fd - file descriptor
  * @param: (bool) blocking - blocking flag
  * @return: bool
  */
-template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-bool Socket<socket_t, proc_t>::set_blocking(int fd, bool blocking) {
+template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
+bool SockBase<socket_t, servicec_t>::set_blocking(int fd, bool blocking) {
     if(fd < 0) {
         DEBUG_STDOUT("fd (file descriptor) is < 0 - failed to update the sockets blocking state");
         return false;
@@ -958,11 +883,11 @@ bool Socket<socket_t, proc_t>::set_blocking(int fd, bool blocking) {
 
 /**
  * @function: receive
- * @class: Socket
+ * @class: SockBase
  * @return: std::string
  */
-template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-std::string Socket<socket_t, proc_t>::receive() {
+template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
+std::string SockBase<socket_t, servicec_t>::receive() {
     char buffer[ m_buf_size ];
     socklen_t sock_size = sizeof(struct sockaddr_in);
     memset(buffer, 0, m_buf_size);
@@ -975,16 +900,16 @@ std::string Socket<socket_t, proc_t>::receive() {
         /**
          * Server
          */
-        if(proc_t == SERVER) {
+        if(servicec_t == SERVER) {
             DEBUG_STDOUT("accepting connection from client...");
             m_tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
             if(m_tcp_socket == -1) {
                 close(m_tcp_socket);
-                throw SocketException("accept failed: %s", std::strerror(errno));
+                throw SockException("accept failed: %s", std::strerror(errno));
             }
             if(read(m_tcp_socket, &buffer, m_buf_size) == -1) {
                 close(m_tcp_socket);
-                throw SocketException("read failed: %s", std::strerror(errno));
+                throw SockException("read failed: %s", std::strerror(errno));
             }
         }
         /**
@@ -995,7 +920,7 @@ std::string Socket<socket_t, proc_t>::receive() {
 
             if(read(m_socket, buffer, m_buf_size) == -1) {
                 close(m_socket);
-                throw SocketException("read failed: %s", std::strerror(errno));
+                throw SockException("read failed: %s", std::strerror(errno));
             }
         }
     }
@@ -1006,11 +931,11 @@ std::string Socket<socket_t, proc_t>::receive() {
         /**
          * Server
          */
-        if(proc_t == SERVER) {
+        if(servicec_t == SERVER) {
             DEBUG_STDOUT("calling recvfrom");
 
             if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_client_sockaddr, &sock_size) == -1) {
-                throw SocketException("recvfrom failed: %s", std::strerror(errno));
+                throw SockException("recvfrom failed: %s", std::strerror(errno));
             }
 
             /**
@@ -1019,13 +944,13 @@ std::string Socket<socket_t, proc_t>::receive() {
             m_client_host = gethostbyaddr((const char*)&m_client_sockaddr.sin_addr.s_addr, sock_size, AF_INET);
 
             if (m_client_host == NULL) {
-                throw SocketException("gethostbyaddr: failed to get client info");
+                throw SockException("gethostbyaddr: failed to get client info");
             }
 
             m_client_addr = inet_ntoa(m_client_sockaddr.sin_addr);
 
             if (m_client_addr == NULL) {
-                throw SocketException("inet_ntoa: returned null - couldn't get client addr");
+                throw SockException("inet_ntoa: returned null - couldn't get client addr");
             }
         }
         /**
@@ -1057,11 +982,11 @@ std::string Socket<socket_t, proc_t>::receive() {
  * @param (bool) (default: false) OOB - out of bounds
  * @return ssize_t
  */
-template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
-    if(proc_t == SERVER) {
+template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
+ssize_t SockBase<socket_t, servicec_t>::send(const std::string& message, bool OOB) {
+    if(servicec_t == SERVER) {
         if(m_socket == -1 || (socket_t == TCP && m_tcp_socket == -1)) {
-            throw SocketException("socket not connected");
+            throw SockException("socket not connected");
         }
     }
 
@@ -1076,7 +1001,7 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
         bytes_sent = write(socket, message.c_str(), strlen(message.c_str()));
 
         if(bytes_sent == -1) {
-           throw SocketException("sendto failed: %s", std::strerror(errno));
+           throw SockException("sendto failed: %s", std::strerror(errno));
         }
 
         /**
@@ -1096,7 +1021,7 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
         );
 
         if(bytes_sent == -1) {
-           throw SocketException("sendto failed: %s", std::strerror(errno));
+           throw SockException("sendto failed: %s", std::strerror(errno));
         }
     }
 #elif defined(PREDEF_PLATFORM_WINDOWS)
@@ -1106,8 +1031,6 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
 #endif
     return bytes_sent;
 }
-
-typedef Socket<TCP, SERVER> TcpServer;
 
 /**
  *          osi model                   ip suite
@@ -1161,7 +1084,7 @@ typedef Socket<TCP, SERVER> TcpServer;
  * - Cross platform header files
  *  <exception> - Is used for creating our custom socket exception classes.
  *  <cstdint>   - Is used for int typedefs.
- *  <cstdarg>   - Is used for va_list in SocketException
+ *  <cstdarg>   - Is used for va_list in SockException
  *  <string>    - Is used so VS doesn't bitch when writing a simple line like 'std::cout << string << std::endl;'
  *  <cstring>   - Is used for std::strerror instead of strerror because g++ throws template related errors otherwise. 
  *

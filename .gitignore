@@ -13,3 +13,4 @@ src.xcodeproj
 *.swp
 src/*.swp
 examples/bin
+bin

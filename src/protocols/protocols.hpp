@@ -1,8 +1,10 @@
 #ifndef __protocols_hpp
 #define __protocols_hpp
 
-#include "../sockit.hpp"
+#include "../sock_base.hpp"
 
-namespace libsockit::protocols {};
+namespace libsockit {
+    namespace protocols {};
+};
 
 #endif

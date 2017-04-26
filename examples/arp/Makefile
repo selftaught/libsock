@@ -1,13 +1,13 @@
 CC=g++
 CFLAGS=-std=c++11 -Wall -I../../src -I.
 
-all: mkdir_bin ping
+all: mkdir_bin arpspoof arpping 
 
-#webserver:
-#	$(CC) $(CFLAGS) webserver.cpp -o bin/webserver
+arpspoof:
+	$(CC) $(CFLAGS) spoof.cpp -o bin/arpspoof
 
-ping:
-	$(CC) $(CFLAGS) ping.cpp -o bin/ping
+arpping:
+	$(CC) $(CFLAGS) ping.cpp -o bin/arpping
 
 mkdir_bin: ; if [ ! -d bin ]; then mkdir bin; fi
 clean:     ; if [   -d bin ]; then rm -f bin/*; fi
