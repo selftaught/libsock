@@ -200,7 +200,7 @@ namespace Libsock {
 #endif
         virtual void connect_server() = 0;
         virtual void connect_client() = 0;
-    
+
     public:
 
         /**
@@ -413,101 +413,6 @@ namespace Libsock {
 
 #endif
         return (rc == 0 ? true : false);
-    }
-
-    /**
-     * @function: receive
-     * @class: SockBase
-     * @return: std::string
-     */
-    template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
-    std::string SockBase<socket_t, servicec_t>::receive() {
-        char buffer[ m_buf_size ];
-        socklen_t sock_size = sizeof(struct sockaddr_in);
-        memset(buffer, 0, m_buf_size);
-
-#if defined(PREDEF_PLATFORM_LINUX)
-        /**
-         * TCP
-         */
-        if(socket_t == TCP) {
-            /**
-             * Server
-             */
-            if(servicec_t == SERVER) {
-                DEBUG_STDOUT("accepting connection from client...");
-                m_tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
-                if(m_tcp_socket == -1) {
-                    close(m_tcp_socket);
-                    throw SockException("accept failed: %s", std::strerror(errno));
-                }
-                if(read(m_tcp_socket, &buffer, m_buf_size) == -1) {
-                    close(m_tcp_socket);
-                    throw SockException("read failed: %s", std::strerror(errno));
-                }
-            }
-            /**
-             * Client
-             */
-            else {
-                DEBUG_STDOUT("listening for a response from the server...");
-
-                if(read(m_socket, buffer, m_buf_size) == -1) {
-                    close(m_socket);
-                    throw SockException("read failed: %s", std::strerror(errno));
-                }
-            }
-        }
-        /**
-         * UDP
-         */
-        else if(socket_t == UDP) {
-            /**
-             * Server
-             */
-            if(servicec_t == SERVER) {
-                DEBUG_STDOUT("calling recvfrom");
-
-                if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_client_sockaddr, &sock_size) == -1) {
-                    throw SockException("recvfrom failed: %s", std::strerror(errno));
-                }
-
-                /**
-                 * Get addr info about who sent the udp packet.
-                 */
-                m_client_host = gethostbyaddr((const char*)&m_client_sockaddr.sin_addr.s_addr, sock_size, AF_INET);
-
-                if (m_client_host == NULL) {
-                    throw SockException("gethostbyaddr: failed to get client info");
-                }
-
-                m_client_addr = inet_ntoa(m_client_sockaddr.sin_addr);
-
-                if (m_client_addr == NULL) {
-                    throw SockException("inet_ntoa: returned null - couldn't get client addr");
-                }
-            }
-            /**
-             * Client
-             */
-            else {
-               /**
-                * @TODO: implement UDP client recv functionality
-                */
-            }
-        }
-        /**
-         * RAW
-         */
-        else if(socket_t == RAW) {
-
-        }
-#elif defined(PREDEF_PLATFORM_WINDOWS)
-        /**
-         * @TODO: implement send functionality for Windows
-         */
-#endif
-        return std::string(buffer);
     }
 
     /**

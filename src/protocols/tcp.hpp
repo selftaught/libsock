@@ -20,17 +20,21 @@ namespace Libsock {
                     SockBase<SOCK_TYPE::TCP, service_t>(_host, _port)
                 {};
 
-                virtual void connect_server();
-                virtual void connect_client();
+                void connect_server();
+                void connect_client();
+
+                std::string receive();
         };
 
+        /**
+         *
+         *
+         */
         template<SERVICE_TYPE service_t>
         void TCP<service_t>::connect_server() {
             DEBUG_STDOUT("starting server connection");
 
-            /**
-             * Throw an exception if the port hasn't be defined by the user.
-             */
+            // Throw an exception if the port hasn't be defined by the user.
             if(!this->m_port) {
                 throw SockException("port not defined");
             }
@@ -40,31 +44,25 @@ namespace Libsock {
 #if defined(PREDEF_PLATFORM_LINUX)
             this->m_socket = socket(this->m_af, SOCK_TYPE::TCP, this->m_protocol);
 
-            /**
-             * Throw an exception if the socket connection failed.
-             */
+            // Throw an exception if the socket connection failed.
             if(this->m_socket == -1) {
                 throw SockException("socket failed: %s", std::strerror(errno));
             }
 
             DEBUG_STDOUT("successfully established a socket connection");
 
-            /**
-             * @TODO: Implement support and abstraction for setting
-             *        and getting multiple options. This particular
-             *        option (SO_REUSEADDR) allows forcing binding
-             *        so we don't have to wait to bind if there's
-             *        already a socket
-             */
+            // @TODO: Implement support and abstraction for setting
+            //        and getting multiple options. This particular
+            //        option (SO_REUSEADDR) allows forcing binding
+            //        so we don't have to wait to bind if there's
+            //        already a socket
             const int toggle = 1;
 
             if(setsockopt(this->m_socket, SOL_SOCKET, SO_REUSEADDR, (const void*)&toggle, sizeof(toggle)) == -1) {
                 throw SockException("setsockopt SO_REUSEADDR failed: %s", std::strerror(errno));
             }
 
-            /**
-             * SO_REUSEPORT needs to be set if the current linux kernel version is >= 3.9
-             */
+            // SO_REUSEPORT needs to be set if the current linux kernel version is >= 3.9
 #ifdef SO_REUSEPORT
 
             DEBUG_STDOUT("setting SO_REUSEPORT (requirement since kernel version >= 3.9)");
@@ -77,22 +75,16 @@ namespace Libsock {
 
             DEBUG_STDOUT("setting memory segment size of struct sockaddr_in to 0");
 
-            /**
-             * Set all bytes of this->m_host to zero. memset() is MT-Safe
-             * See: http://man7.org/linux/man-pages/man3/memset.3.html
-             */
+            // Set all bytes of this->m_host to zero. memset() is MT-Safe
+            // See: http://man7.org/linux/man-pages/man3/memset.3.html
             memset(this->m_host, sizeof(struct sockaddr_in), 0);
 
-            /**
-             * Connection info.
-             */
+            // Connection info.
             this->m_sockaddr.sin_family      = this->m_af;
             this->m_sockaddr.sin_addr.s_addr = INADDR_ANY;
             this->m_sockaddr.sin_port        = htons(this->m_port);
 
-            /**
-             * If binding fails, throw an exception.
-             */
+            // If binding fails, throw an exception.
             if(bind(this->m_socket, (struct sockaddr*)&this->m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
                 close(this->m_socket);
                 throw SockException("bind failed: %s", std::strerror(errno));
@@ -104,9 +96,7 @@ namespace Libsock {
             listen(this->m_socket, this->m_backlog);
 
 #elif defined(PREDEF_PLATFORM_WINDOWS)
-            /**
-             * Initiate the use of Winsock DLL
-             */
+            // Initiate the use of Winsock DLL
             int err = WSAStartup(MAKEWORD(2, 2), &this->m_wsa);
 
             if (err != 0) {
@@ -142,16 +132,12 @@ namespace Libsock {
 
         template<SERVICE_TYPE service_t>
         void TCP<service_t>::connect_client() {
-            /**
-             * Throw an exception if the port hasn't be defined by the user.
-             */
+            // Throw an exception if the port hasn't be defined by the user.
             if(!this->m_port) {
                 throw SockException("port isn't defined");
             }
 
-            /**
-             * Throw an exception if the hostname hasn't be defined by the user.
-             */
+            // Throw an exception if the hostname hasn't be defined by the user.
             if(this->m_hostname.empty()) {
                 throw SockException("hostname isn't defined");
             }
@@ -163,9 +149,7 @@ namespace Libsock {
                 throw SockException("socket failed: %s", std::strerror(errno));
             }
 
-            /**
-             * So that we can re-bind to it without TIME_WAIT problems
-             */
+            // So that we can re-bind to it without TIME_WAIT problems
             int ra = 1;
             int rc = setsockopt(this->m_socket, SOL_SOCKET, SO_REUSEADDR, &ra, sizeof(ra));
 
@@ -181,33 +165,61 @@ namespace Libsock {
                 throw SockException("gethostbyname failed: %s", std::strerror(h_errno));
             }
 
-            /**
-             * Zero out this->m_sockaddr struct and then copy the
-             * host address to it's sin_addr member variable.
-             */
+            // Zero out this->m_sockaddr struct and then copy the
+            // host address to it's sin_addr member variable.
             memset(&this->m_sockaddr, 0, sizeof(struct sockaddr_in));
             bcopy((char*)this->m_host->h_addr, (char*)&this->m_sockaddr.sin_addr, this->m_host->h_length);
 
-            /**
-             * Set address family and port.
-             */
+            // Set address family and port.
             this->m_sockaddr.sin_family = this->m_af;
             this->m_sockaddr.sin_port   = htons(this->m_port);
 
-            /**
-             * TCP
-             */
             if(::connect(this->m_socket, (struct sockaddr*)&this->m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
                 this->disconnect();
                 throw SockException("connect failed: %s", std::strerror(errno));
             }
 
 #elif defined(PREDEF_PLATFORM_WINDOWS)
-            /**
-             * @TODO: implement winsock
-             */
+            // @TODO: implement winsock
 #endif
 
+        }
+
+        /**
+         *
+         * 
+         */
+        template<SERVICE_TYPE service_t>
+        std::string TCP<service_t>::receive() {
+            char buffer[m_buf_size];
+            socklen_t sock_size = sizeof(struct sockaddr_in);
+            memset(buffer, 0, m_buf_size);
+
+#if defined(PREDEF_PLATFORM_LINUX)
+            if(servicec_t == SERVER) {
+                DEBUG_STDOUT("accepting connection from client...");
+                m_tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
+                if(m_tcp_socket == -1) {
+                    close(m_tcp_socket);
+                    throw SockException("accept failed: %s", std::strerror(errno));
+                }
+                if(read(m_tcp_socket, &buffer, m_buf_size) == -1) {
+                    close(m_tcp_socket);
+                    throw SockException("read failed: %s", std::strerror(errno));
+                }
+            }
+            else {
+                DEBUG_STDOUT("listening for a response from the server...");
+
+                if(read(m_socket, buffer, m_buf_size) == -1) {
+                    close(m_socket);
+                    throw SockException("read failed: %s", std::strerror(errno));
+                }
+            }
+#elif defined(PREDEF_PLATFORM_WINDOWS)
+            // @TODO: implement send functionality for Windows
+#endif
+            return std::string(buffer);
         }
     };
 };
