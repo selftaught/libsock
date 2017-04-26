@@ -11,9 +11,9 @@
 #include <string>
 #include <vector>
 
-#include "sock_defs.hpp"
-#include "sock_enums.hpp"
-#include "sock_exception.hpp"
+#include "sock/defs.hpp"
+#include "sock/enums.hpp"
+#include "sock/exception.hpp"
 
 /**
  * WINDOWS

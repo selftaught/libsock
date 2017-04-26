@@ -1,7 +1,7 @@
 #ifndef __protocol_arp_hpp
 #define __protocol_arp_hpp
 
-#include "../sock_raw.hpp"
+#include "../sock/raw.hpp"
 #include "../leafs/macaddr.hpp"
 
 namespace Libsockit {

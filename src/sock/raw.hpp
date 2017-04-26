@@ -1,7 +1,7 @@
 #ifndef __sock_raw_hpp
 #define __sock_raw_hpp
 
-#include "sock_base.hpp"
+#include "../base.hpp"
 
 namespace Libsock {
     class SockRaw : public SockBase<RAW, UNDEF> {
