@@ -15,9 +15,6 @@
 #include "sock/enums.hpp"
 #include "sock/exception.hpp"
 
-/**
- * WINDOWS
- */
 #if PREDEF_PLATFORM_WINDOWS
 
 #include <WinSock2.h>
@@ -25,9 +22,6 @@
 
 #pragma comment(lib, "ws2_32.lib")
 
-/**
- * DARWIN / LINUX
- */
 #elif PREDEF_PLATFORM_LINUX
 
 #include <sys/socket.h>
@@ -52,11 +46,6 @@ namespace Libsock {
     template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
     class SockBase {
     protected:
-        /**
-         * Member function prototypes.
-         */
-        void disconnect();
-        void connect();
 
         /**
          * @membervar: (std::string) m_hostname
@@ -209,10 +198,9 @@ namespace Libsock {
         struct addrinfo  m_hints;
 
 #endif
-
-        virtual void connect_server();
-        virtual void connect_client();
-
+        virtual void connect_server() = 0;
+        virtual void connect_client() = 0;
+    
     public:
 
         /**
@@ -277,11 +265,16 @@ namespace Libsock {
          */
         ~SockBase();
 
+        /**
+         * Member function prototypes.
+         */
+        void disconnect();
+        void connect();
 
         bool ready(const uint32_t&);
         bool set_blocking(int, bool blocking = false);
 
-        std::string receive();
+        virtual std::string receive() = 0;
 
         ssize_t send(const std::string&, bool OOB = false);
 
@@ -372,280 +365,6 @@ namespace Libsock {
         }
 
         WSACleanup();
-#endif
-    }
-
-    /**
-     * @functon: connect_server
-     * @class: SockBase
-     * @description:
-     *  Makes a 3-way TCP handshake (Minimum number of packets: 3)
-     *
-     *  1. SERVER: socket(), bind(), listen()
-     *
-     *  2. CLIENT: sends a SYN segment by calling connect which tells the
-     *             server the client's initial sequence number for the data
-     *             which the client will send on the connection.
-     *
-     *  3. SERVER: ACKs the client's SYN and the server sends back it's own
-     *             SYN segment containing the initial sequence number for the data
-     *             it will send on the connection.
-     *
-     */
-    template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
-    void SockBase<socket_t, servicec_t>::connect_server() {
-
-        DEBUG_STDOUT("starting server connection");
-
-        /**
-         * Throw an exception if the port hasn't be defined by the user.
-         */
-        if(!m_port) {
-            throw SockException("port not defined");
-        }
-
-        DEBUG_STDOUT("creating socket");
-
-#if defined(PREDEF_PLATFORM_LINUX)
-        m_socket = socket(m_af, socket_t, m_protocol);
-
-        /**
-         * Throw an exception if the socket connection failed.
-         */
-        if(m_socket == -1) {
-            throw SockException("socket failed: %s", std::strerror(errno));
-        }
-
-        DEBUG_STDOUT("successfully established a socket connection");
-
-        /**
-         * @TODO: Implement support and abstraction for setting
-         *        and getting multiple options. This particular
-         *        option (SO_REUSEADDR) allows forcing binding
-         *        so we don't have to wait to bind if there's
-         *        already a socket
-         */
-        const int toggle = 1;
-
-        if(setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (const void*)&toggle, sizeof(toggle)) == -1) {
-            throw SockException("setsockopt SO_REUSEADDR failed: %s", std::strerror(errno));
-        }
-
-        /**
-         * SO_REUSEPORT needs to be set if the current linux kernel version is >= 3.9
-         */
-#ifdef SO_REUSEPORT
-
-        DEBUG_STDOUT("setting SO_REUSEPORT (requirement since kernel version >= 3.9)");
-
-        if(setsockopt(m_socket, SOL_SOCKET, SO_REUSEPORT, (const void*)&toggle, sizeof(toggle)) == -1) {
-            throw SockException("setsockopt SO_REUSEPORT failed: %s", std::strerror(errno));
-        }
-
-#endif
-
-        DEBUG_STDOUT("setting memory segment size of struct sockaddr_in to 0");
-
-        /**
-         * Set all bytes of m_host to zero. memset() is MT-Safe
-         * See: http://man7.org/linux/man-pages/man3/memset.3.html
-         */
-        memset(m_host, sizeof(struct sockaddr_in), 0);
-
-        /**
-         * Connection info.
-         */
-        m_sockaddr.sin_family      = m_af;
-        m_sockaddr.sin_addr.s_addr = INADDR_ANY;
-        m_sockaddr.sin_port        = htons(m_port);
-
-        /**
-         * If binding fails, throw an exception.
-         */
-        if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
-            close(m_socket);
-            throw SockException("bind failed: %s", std::strerror(errno));
-        }
-
-        DEBUG_STDOUT("socket bind() was successful!");
-
-        /**
-         * If this is a TCP server then we need to
-         * put the socket in listening mode.
-         */
-        if(socket_t == TCP) {
-            DEBUG_STDOUT("listening for incoming tcp connections");
-            listen(m_socket, m_backlog);
-        }
-
-#elif defined(PREDEF_PLATFORM_WINDOWS)
-        /**
-         * Initiate the use of Winsock DLL
-         */
-        int err = WSAStartup(MAKEWORD(2, 2), &m_wsa);
-
-        if (err != 0) {
-            throw SockException("WSAStartup failed: %d", err);
-        }
-
-        ZeroMemory(&m_hints, sizeof(m_hints));
-
-        m_hints.ai_family	= m_af;
-        m_hints.ai_socktype = m_type;
-        m_hints.ai_protocol = m_protocol;
-        m_hints.ai_flags	= AI_PASSIVE;
-
-        err = getaddrinfo(NULL, std::to_string(m_port).c_str(), &m_hints, &m_result);
-
-        if (err != 0) {
-            disconnect();
-            throw SockException("getaddrinfo failed: %d", err);
-        }
-
-        m_socket = socket(
-            m_result->ai_family,
-            m_result->ai_socktype,
-            m_result->ai_protocol
-        );
-
-        if (m_socket == INVALID_SOCKET) {
-            disconnect();
-            throw SockException("socket failed with error: %ld", WSAGetLastError());
-        }
-#endif
-    }
-
-    /**
-     * @function: connect_client
-     * @class: SockBase
-     * @description: Establishes a client connection.
-     */
-    template<SOCK_TYPE socket_t, SERVICE_TYPE servicec_t>
-    void SockBase<socket_t, servicec_t>::connect_client() {
-        /**
-         * Throw an exception if the port hasn't be defined by the user.
-         */
-        if(!m_port) {
-            throw SockException("port isn't defined");
-        }
-
-        /**
-         * Throw an exception if the hostname hasn't be defined by the user.
-         */
-        if(m_hostname.empty()) {
-            throw SockException("hostname isn't defined");
-        }
-
-#if defined(PREDEF_PLATFORM_LINUX)
-        m_socket = socket(m_af, socket_t, m_protocol);
-
-        if(m_socket == -1) {
-            throw SockException("socket failed: %s", std::strerror(errno));
-        }
-
-        /**
-         * So that we can re-bind to it without TIME_WAIT problems
-         */
-        int ra = 1;
-        int rc = setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &ra, sizeof(ra));
-
-        if(rc == -1) {
-            throw SockException("setsockopt failed: %s", std::strerror(errno));
-        }
-
-        set_blocking(m_socket, false);
-
-        m_host = gethostbyname(m_hostname.c_str());
-
-        if(m_host == NULL) {
-            disconnect();
-            throw SockException("gethostbyname failed: %s", std::strerror(h_errno));
-        }
-
-        /**
-         *
-         * @TODO:
-        if (socket_t == UDP) {
-            struct addrinfo hints;
-            struct addrinfo *result, *rp;
-            int sfd, s, j;
-            size_t len;
-            ssize_t nread;
-            char buf[BUF_SIZE];
-
-            memset(&hints, 0, sizeof(struct addrinfo));
-            hints.ai_family   = AF_UNSPEC;
-            hints.ai_socktype = socket_t; 
-            hints.ai_flags    = 0;
-            hints.ai_protocol = 0;
-
-            s = getaddrinfo((char*)m_host->h_addr, htons(m_port), &hints, &result);
-
-            if (s != 0) {
-                throw SockException("getaddrinfo call was not successful!");
-            }
-
-            for (rp = result; rp != NULL; rp = rp->ai_next) {
-                sfd = socket(
-                    rp->ai_family,
-                    rp->ai_socktype,
-                    rp->ai_protocol
-                );
-
-                if (sfd == -1) {
-                    continue;
-                }
-
-                if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) {
-                    break;
-                }
-
-                close(sfd);
-            }
-
-            if (rp == NULL) {
-                throw SockException("Couldn't connect to any addresses returned by getaddrinfo()!");
-            }
-
-            freeaddrinfo(result);
-        }
-        */
-
-
-        /**
-         * Zero out m_sockaddr struct and then copy the
-         * host address to it's sin_addr member variable.
-         */
-        memset(&m_sockaddr, 0, sizeof(struct sockaddr_in));
-        bcopy((char*)m_host->h_addr, (char*)&m_sockaddr.sin_addr, m_host->h_length);
-
-        /**
-         * Set address family and port.
-         */
-        m_sockaddr.sin_family = m_af;
-        m_sockaddr.sin_port   = htons(m_port);
-
-        /**
-         * TCP
-         */
-        if(socket_t == TCP) {
-            if(::connect(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
-                disconnect();
-                throw SockException("connect failed: %s", std::strerror(errno));
-            }
-        }
-        else if(socket_t == UDP) {
-            socklen_t sock_size = sizeof(struct sockaddr*);
-            if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sock_size) == -1) {
-                disconnect();
-                throw SockException("bind failed: %s", std::strerror(errno));
-            }
-        }
-
-#elif defined(PREDEF_PLATFORM_WINDOWS)
-        /**
-         * @TODO: implement winsock
-         */
 #endif
     }
 

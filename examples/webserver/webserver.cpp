@@ -4,7 +4,7 @@ void WebServer::run() {
     try {
         connect();
     }
-    catch(SocketException e) {
+    catch(const Libsock::SockException& e) {
         std::cerr << e.what() << std::endl;
         return;
     }
@@ -25,7 +25,7 @@ void WebServer::run() {
                         send("HTTP/1.1 200 OK\r\n\r\n<html><body><h1>foobar</h1></body></html>");
                     }
                 }
-                catch(SocketException e) {
+                catch(const Libsock::SockException& e) {
                     std::cerr << e.what() << std::endl;
                     break;
                 }

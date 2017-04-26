@@ -1,10 +1,10 @@
 CC=g++
-CFLAGS=-std=c++11 -Wall -I../../src
+CFLAGS=-std=c++11 -Wall -I../../src -I.
 
-all: mkdir_bin webserver
+all: mkdir_bin httpreq
 
-webserver:
-	$(CC) $(CFLAGS) -I. webserver.cpp -o bin/webserver
+httpreq:
+	$(CC) $(CFLAGS) httpreq.cpp -o bin/httpreq
 
 mkdir_bin: ; if [ ! -d bin ]; then mkdir bin; fi
 clean:     ; if [   -d bin ]; then rm -f bin/*; fi
