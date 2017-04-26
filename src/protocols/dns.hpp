@@ -1,8 +1,12 @@
-#ifndef __protocol_dns
-#define __protocol_dns
+#ifndef __protocols_dns_hpp
+#define __protocols_dns_hpp
 
-namespace DNS {
+namespace Libsockit {
+    namespace Protocols {
+        namespace DNS {
 
+        };
+    };
 };
 
 #endif

@@ -1,13 +1,13 @@
-#ifndef __icmp_hpp
-#define __icmp_hpp
+#ifndef __protocols_icmp_hpp
+#define __protocols_icmp_hpp
 
-#include "../sockit.hpp"
+#include "../sock_raw.hpp"
 
-namespace libsockit {
-    namespace protocols {
+namespace Libsockit {
+    namespace Protocols {
         class ICMP {
+            protected:
             private:
-
             public:
         };
     };

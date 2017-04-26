@@ -1,13 +1,12 @@
-#ifndef __protocol_arp
-#define __protocol_arp
+#ifndef __protocol_arp_hpp
+#define __protocol_arp_hpp
 
-#include "protocols.hpp"
 #include "../sock_raw.hpp"
 #include "../leafs/macaddr.hpp"
 
-namespace libsockit {
-    namespace protocols {
-        namespace arp {
+namespace Libsockit {
+    namespace Protocols {
+        namespace ARP {
 
         };
     };
