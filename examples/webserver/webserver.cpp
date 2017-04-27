@@ -19,9 +19,8 @@ void WebServer::run() {
                     std::string received = receive();
 
                     if(!received.empty()) {
-                        std::cout << "received " << received.length() << " bytes\n";
-                        std::cout << "message: \n\n" << received << std::endl;
-
+                        //std::cout << "received " << received.length() << " bytes\n";
+                        //std::cout << "message: \n\n" << received << std::endl;
                         send("HTTP/1.1 200 OK\r\n\r\n<html><body><h1>foobar</h1></body></html>");
                     }
                 }

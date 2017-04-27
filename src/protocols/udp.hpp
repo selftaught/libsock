@@ -16,7 +16,7 @@ namespace Libsock { namespace Protocols {
 
             void connect();
             std::string receive();
-    		ssize_t send(const std::string&, bool);
+    		ssize_t send(const std::string&, bool oob = 0);
     };
 
     /**
@@ -25,15 +25,12 @@ namespace Libsock { namespace Protocols {
      */
     template<SERVICE_TYPE service_t>
     void UDP<service_t>::connect() {
-        
-        this->m_buf_size = UDP_RECV_BUF_LEN;
-        
         if (service_t == SERVER) {
 			DEBUG_STDOUT("starting server connection");
 
 			// Throw an exception if the port hasn't be defined by the user.
 			if(!this->m_port) {
-				throw SocketException("port not defined");
+				throw SocketException("port is not defined");
 			}
 
 			DEBUG_STDOUT("creating socket");
@@ -190,15 +187,15 @@ namespace Libsock { namespace Protocols {
      *
      */
     std::string UDP<service_t>::receive() {
-        char buffer[this->m_buf_size];
+        char buffer[UDP_RECV_BUF_LEN];
         socklen_t sock_size = sizeof(struct sockaddr_in);
-        memset(buffer, 0, this->m_buf_size);
+        memset(buffer, 0, UDP_RECV_BUF_LEN);
 
 #if defined(PREDEF_PLATFORM_LINUX)
         if(servicec_t == SERVER) {
             DEBUG_STDOUT("calling recvfrom");
 
-            if(recvfrom(this->m_socket, buffer, this->m_buf_size, 0, (struct sockaddr*)&this->m_client_sockaddr, &sock_size) == -1) {
+            if(recvfrom(this->m_socket, buffer, UDP_RECV_BUF_LEN, 0, (struct sockaddr*)&this->m_client_sockaddr, &sock_size) == -1) {
                 throw SockException("recvfrom failed: %s", std::strerror(errno));
             }
 
@@ -229,7 +226,7 @@ namespace Libsock { namespace Protocols {
 	 *
      */
 	template<SERVICE_TYPE service_t>
-	ssize_t UDP<service_t>::send(const std::string& message, bool oob) {
+	ssize_t UDP<service_t>::send(const std::string& msg, bool oob) {
 		if(service_t == SERVER) {
 			if(this->m_socket == -1) {
 				throw SockException("socket not connected");
@@ -237,16 +234,16 @@ namespace Libsock { namespace Protocols {
 		}
 
 		ssize_t bytes_sent = 0;
-		int socket = this->m_socket;
 
 #if defined(PREDEF_PLATFORM_LINUX)
-		DEBUG_STDOUT("sending " + std::to_string(message.size()) + " bytes of data");
-		DEBUG_STDOUT("data: " + message);
+        size_t msg_len = strlen(msg);
+		DEBUG_STDOUT("sending " + std::to_string(msg_len) + " bytes of data");
+		DEBUG_STDOUT("data: " + msg);
 
 		bytes_sent = sendto(
 			this->m_socket,
-			message.c_str(),
-			strlen(message.c_str()),
+			msg.c_str(),
+			msg_len,
 			0,
 			(struct sockaddr*)&this->m_client_sockaddr,
 			sizeof(this->m_client_sockaddr)

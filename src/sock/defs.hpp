@@ -1,6 +1,8 @@
 #ifndef __sock_defs_hpp
 #define __sock_defs_hpp
 
+#include <stdio.h>
+
 #define POLL_EXPIRE      0
 #define UDP_RECV_BUF_LEN 576
 #define TCP_RECV_BUF_LEN 1500
@@ -49,18 +51,18 @@
  */
 #define __DEBUGGING 1
 #ifdef  __DEBUGGING
-#    define DEBUG_STDERR(x) \
-        (std::cout << "[ " << __FILE__ << " ] " \
+#    define DEBUG_STDERR(...) \
+        (fprintf(stderr, "[ " << __FILE__ << " ] " \
                    << "(func " << __FUNCTION__ << "): " \
                    << "(line " << __LINE__ << "): " \
-                   << (x) \
+                   << __VA_ARGS__ \
                    << std::endl \
         )
-#    define DEBUG_STDOUT(x) \
+#    define DEBUG_STDOUT(...) \
         (std::cout << "[ " << __FILE__ << " ] " \
                    << "(func " << __FUNCTION__ << "): " \
                    << "(line " << __LINE__ << "): " \
-                   << (x) \
+                   << __VA_ARGS__ \
                    << std::endl \
         )
 #else

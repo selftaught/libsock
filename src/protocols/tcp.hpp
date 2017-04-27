@@ -30,9 +30,6 @@ namespace Libsock { namespace Protocols {
      */
     template<SERVICE_TYPE service_t>
     void TCP<service_t>::connect() {
-
-        this->m_buf_size = TCP_RECV_BUF_LEN;
-
         if (service_t == SERVER) {
             DEBUG_STDOUT("starting server connection");
 
@@ -197,9 +194,9 @@ namespace Libsock { namespace Protocols {
      */
     template<SERVICE_TYPE service_t>
     std::string TCP<service_t>::receive() {
-        char buffer[this->m_buf_size];
+        char buffer[TCP_RECV_BUF_LEN];
         socklen_t sock_size = sizeof(struct sockaddr_in);
-        memset(buffer, 0, this->m_buf_size);
+        memset(buffer, 0, TCP_RECV_BUF_LEN);
 
 #if defined(PREDEF_PLATFORM_LINUX)
         if(service_t == SERVER) {
@@ -209,15 +206,14 @@ namespace Libsock { namespace Protocols {
                 close(this->m_tcp_socket);
                 throw SockException("accept failed: %s", std::strerror(errno));
             }
-            if(read(this->m_tcp_socket, &buffer, this->m_buf_size) == -1) {
+            if(read(this->m_tcp_socket, &buffer, TCP_RECV_BUF_LEN) == -1) {
                 close(this->m_tcp_socket);
                 throw SockException("read failed: %s", std::strerror(errno));
             }
         }
         else {
             DEBUG_STDOUT("listening for a response from the server...");
-
-            if(read(this->m_socket, buffer, this->m_buf_size) == -1) {
+            if(read(this->m_socket, buffer, TCP_RECV_BUF_LEN) == -1) {
                 close(this->m_socket);
                 throw SockException("read failed: %s", std::strerror(errno));
             }
@@ -233,7 +229,7 @@ namespace Libsock { namespace Protocols {
      *
      */
 	template<SERVICE_TYPE service_t>
-	ssize_t TCP<service_t>::send(const std::string& message, bool oob) {
+	ssize_t TCP<service_t>::send(const std::string& msg, bool oob) {
         if(service_t == SERVER) {
             if(this->m_tcp_socket == -1) {
                 throw SockException("socket not connected");
@@ -243,11 +239,12 @@ namespace Libsock { namespace Protocols {
         ssize_t bytes_sent = 0;
 
 #if defined(PREDEF_PLATFORM_LINUX)
-        DEBUG_STDOUT("sending " + std::to_string(message.size()) + " bytes of data");
-        DEBUG_STDOUT("data: " + message);
+        size_t msg_len = msg.size();
+        
+        DEBUG_STDOUT("sending " + std::to_string(msg_len) + " bytes of data");
+        //DEBUG_STDOUT("data: " + msg);
 
-		bytes_sent = write(this->m_tcp_socket, message.c_str(), strlen(message.c_str()));
-
+		bytes_sent = write(this->m_tcp_socket, msg.c_str(), msg_len);
 		if(bytes_sent == -1) {
 		   throw SockException("sendto failed: %s", std::strerror(errno));
 		}
