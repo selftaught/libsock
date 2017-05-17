@@ -15,6 +15,8 @@
 #include "sock/enums.hpp"
 #include "sock/exception.hpp"
 
+#define BACKLOG_LEN 5
+
 #if PREDEF_PLATFORM_WINDOWS
 
 #include <WinSock2.h>
@@ -90,7 +92,7 @@ namespace Libsock {
         SockBase(const uint16_t& port, int protocol = 0):
             m_port(port),
             m_af(AF_INET),
-            m_backlog(5),
+            m_backlog(BACKLOG_LEN),
             m_protocol(protocol),
             m_socket(DEFAULT_SOCKET_VAL)
         {}
@@ -99,7 +101,7 @@ namespace Libsock {
             m_hostname(hostname),
             m_port(port),
             m_af(AF_INET),
-            m_backlog(5),
+            m_backlog(BACKLOG_LEN),
             m_protocol(protocol),
             m_socket(DEFAULT_SOCKET_VAL)
         {}
@@ -108,7 +110,7 @@ namespace Libsock {
             m_hostname(hostname),
             m_port(std::stoi(port)),
             m_af(AF_INET),
-            m_backlog(5),
+            m_backlog(BACKLOG_LEN),
             m_protocol(protocol),
             m_socket(DEFAULT_SOCKET_VAL)
         {}
