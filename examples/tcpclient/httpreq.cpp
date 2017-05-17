@@ -1,13 +1,14 @@
 #include <iostream>
 #include <protocols/tcp.hpp>
 
-void http_request(const std::string&);
+void http_request(const std::string&, const std::string&);
 
 int main(int argc, char ** argv) {
     int opt = 0;
     std::string host;
+    std::string message;
 
-    while((opt = getopt(argc, argv, "h:p:")) != -1) {
+    while((opt = getopt(argc, argv, "m:h:p:")) != -1) {
         std::string optarg_str;
 
         if(optarg != NULL) {
@@ -19,6 +20,10 @@ int main(int argc, char ** argv) {
                 host = optarg_str;
                 break;
             }
+            case 'm': {
+                message = optarg_str;
+                break;
+            }
         }
     }
 
@@ -27,41 +32,31 @@ int main(int argc, char ** argv) {
         return EXIT_FAILURE;
     }
 
-    http_request(host);
+    if (message.empty()) {
+        std::cerr << "Provide a message to send using -m <message>" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    http_request(host, message);
 
     return EXIT_SUCCESS;
 }
 
-void http_request(const std::string& _host) {
+void http_request(const std::string& _host, const std::string& _message) {
     TCPClient client(_host, 80);
 
     try {
         client.connect();
+        client.send(_message);
+        std::string recvd = client.receive();
+        std::cout << "----------------------------------------"
+                  << "client received:                        "
+                  << "                                        "
+                  << recvd
+                  << std::endl;
     }
     catch(const Libsock::SockException& e) {
         std::cerr << e.what() << std::endl;
         return;
-    }
-
-    while(true) {
-        int e = poll(client.handle(), 1, 500);
-
-        switch(e) {
-            case POLL_EXPIRE: break;
-            default: {
-                try {
-                    std::string received = client.receive();
-
-                    if(!received.empty()) {
-                        std::cout << "received " << received.length() << " bytes\n";
-                        std::cout << "message: \n\n" << received << std::endl;
-                    }
-                }
-                catch(const Libsock::SockException& e) {
-                    std::cerr << e.what() << std::endl;
-                    break;
-                }
-            }
-        }
     }
 }

@@ -240,9 +240,9 @@ namespace Libsock { namespace Protocols {
 
 #if defined(PREDEF_PLATFORM_LINUX)
         size_t msg_len = msg.size();
-        
+
         DEBUG_STDOUT("sending " + std::to_string(msg_len) + " bytes of data");
-        //DEBUG_STDOUT("data: " + msg);
+        DEBUG_STDOUT("data: " + msg);
 
 		bytes_sent = write(this->m_tcp_socket, msg.c_str(), msg_len);
 		if(bytes_sent == -1) {
