@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 PLATFORMS=(
+  "x86_64"
   "arm-linux-gnueabi"
   "arm-linux-gnueabihf"
   "powerpc64le-linux-gnu"
