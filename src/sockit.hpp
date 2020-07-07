@@ -539,7 +539,7 @@ public:
      */
     void init();
     void disconnect();
-    void connect(bool server = false);
+    void connect();
 
     bool ready(const uint32_t&);
     bool set_blocking(int, bool blocking = false);
@@ -589,7 +589,7 @@ Socket<socket_t, proc_t>::~Socket() {
  *  based on the value of m_proc_type
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-void Socket<socket_t, proc_t>::connect(bool server) {
+void Socket<socket_t, proc_t>::connect() {
     /**
      * TCP specific declarations
      */
