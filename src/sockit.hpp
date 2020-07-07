@@ -195,7 +195,6 @@ enum SOCKET_TYPE {
  * of Socket checking and defining m_socket based on the current
  * system. However, by define DEFAULT_SOCKET_VAL, we don't need to do that.
  * We can simply define m_socket like m_socket(DEFAULT_SOCKET_VAL) instead.
- *
  */
 #if defined (PREDEF_PLATFORM_LINUX)
 #    define DEFAULT_SOCKET_VAL -1
@@ -203,9 +202,7 @@ enum SOCKET_TYPE {
 #    define DEFAULT_SOCKET_VAL INVALID_SOCKET
 #endif
 
-/**
- * Debugging preprocessors.
- */
+// Debug preprocessors
 #define __DEBUGGING 1
 #ifdef  __DEBUGGING
     #define DEBUG_STDERR(x) \
@@ -385,9 +382,7 @@ protected:
      */
      double m_recv_timeout;
 
-    /**
-     * If the current platform is *nix or darwin
-     */
+// If the current platform is *nix or darwin
 #if defined(PREDEF_PLATFORM_LINUX)
 
     /**
@@ -590,25 +585,17 @@ Socket<socket_t, proc_t>::~Socket() {
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::connect() {
-    /**
-     * TCP specific declarations
-     */
-    if(socket_t == TCP) {
-       m_buf_size = TCP_RECV_BUF_LEN;
-    }
-    /**
-     * UDP specific declarations
-     */
-    else if(socket_t == UDP) {
-        m_buf_size = UDP_RECV_BUF_LEN;
-    }
-
+    m_buf_size = (socket_t == TCP ? TCP_RECV_BUF_LEN : UDP_RECV_BUF_LEN);
     if(proc_t == UNDEF) {
         throw SocketException("undefined service type");
     }
 
-         if(proc_t == SERVER) { connect_server(); }
-    else if(proc_t == CLIENT) { connect_client(); }
+    if(proc_t == SERVER) {
+        connect_server();
+    }
+    else if(proc_t == CLIENT) {
+        connect_client();
+    }
     else {
         throw SocketException("invalid service type");
     }
