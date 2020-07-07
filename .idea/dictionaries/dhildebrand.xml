@@ -1,16 +1,49 @@
 <component name="ProjectDictionaryState">
   <dictionary name="dhildebrand">
     <words>
+      <w>addrf</w>
+      <w>addrinfo</w>
+      <w>arpa</w>
+      <w>cout</w>
+      <w>cstdarg</w>
+      <w>cstdint</w>
+      <w>cstring</w>
+      <w>datalink</w>
+      <w>dlpi</w>
       <w>elif</w>
+      <w>endl</w>
+      <w>fcntl</w>
       <w>getaddrinfo</w>
+      <w>gethostbyaddr</w>
       <w>htons</w>
+      <w>icmp</w>
+      <w>icmpv</w>
+      <w>ifaddrs</w>
+      <w>igmp</w>
       <w>inaddr</w>
+      <w>inet</w>
+      <w>iostream</w>
+      <w>libsockit</w>
+      <w>membervar</w>
+      <w>netdb</w>
+      <w>netinet</w>
+      <w>ntoa</w>
+      <w>pollfd</w>
       <w>predef</w>
+      <w>rarp</w>
+      <w>recvfrom</w>
       <w>reuseport</w>
+      <w>seqpacket</w>
       <w>setsockopt</w>
       <w>sockaddr</w>
+      <w>sockit</w>
       <w>socktype</w>
+      <w>ssize</w>
+      <w>stoi</w>
+      <w>tcpip</w>
+      <w>unistd</w>
       <w>winsock</w>
+      <w>wsadata</w>
     </words>
   </dictionary>
 </component>

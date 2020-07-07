@@ -1,5 +1,6 @@
+MF_ABS_PATH := $(shell pwd)/$(shell echo ${MAKEFILE_LIST} | tr -d ' ' | sed --expression 's/Makefile//g')
 CC=g++
-CFLAGS=-std=c++11 -Wall -I../../src
+CFLAGS=-std=c++11 -Wall -I${MF_ABS_PATH}/../../src
 
 all: mkdir_bin webserver
 

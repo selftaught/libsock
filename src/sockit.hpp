@@ -145,6 +145,7 @@ namespace libsockit {};
  *
  */
 #define POLL_EXPIRE 0
+#define BACKLOG_LEN 5
 
 /**
  * Default recv char array lengths for UDP and TCP.
@@ -331,14 +332,14 @@ protected:
     uint16_t m_buf_size;
 
     /**
-     * @membervar: (sockadd_in) m_sockaddr
+     * @membervar: (sockaddr_in) m_sockaddr
      * @class: Socket
      * @accessor: protected
      */
     struct sockaddr_in m_sockaddr;
 
     /**
-     * @membervar: (sockadd_in) m_client_sockaddr
+     * @membervar: (sockaddr_in) m_client_sockaddr
      * @class: Socket
      * @accessor: protected
      */
@@ -478,7 +479,7 @@ public:
     Socket(const uint16_t& port, int protocol = 0):
         m_port(port),
         m_af(AF_INET),
-        m_backlog(5),
+        m_backlog(BACKLOG_LEN),
         m_protocol(protocol),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
@@ -497,7 +498,7 @@ public:
         m_hostname(hostname),
         m_port(port),
         m_af(AF_INET),
-        m_backlog(5),
+        m_backlog(BACKLOG_LEN),
         m_protocol(protocol),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
@@ -516,7 +517,7 @@ public:
         m_hostname(hostname),
         m_port(std::stoi(port)),
         m_af(AF_INET),
-        m_backlog(5),
+        m_backlog(BACKLOG_LEN),
         m_protocol(protocol),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
@@ -577,7 +578,7 @@ Socket<socket_t, proc_t>::~Socket() {
 /**
  * @function: connect
  * @class: Socket
- * @descrition:
+ * @description:
  *  Calls the correct connect function (server or client)
  *  based on the value of m_proc_type
  */
@@ -633,7 +634,7 @@ void Socket<socket_t, proc_t>::disconnect() {
 }
 
 /**
- * @functon: connect_server
+ * @function: connect_server
  * @class: Socket
  * @description:
  *  Makes a 3-way TCP handshake (Minimum number of packets: 3)
@@ -651,18 +652,13 @@ void Socket<socket_t, proc_t>::disconnect() {
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::connect_server() {
-
     DEBUG_STDOUT("starting server connection");
-
-    /**
-     * Throw an exception if the port hasn't be defined by the user.
-     */
+    // Throw an exception if the port hasn't be defined by the user.
     if(!m_port) {
         throw SocketException("port not defined");
     }
 
     DEBUG_STDOUT("creating socket");
-
 #if defined(PREDEF_PLATFORM_LINUX)
     m_socket = socket(m_af, socket_t, m_protocol);
     if(m_socket == -1) {
@@ -670,7 +666,6 @@ void Socket<socket_t, proc_t>::connect_server() {
     }
 
     DEBUG_STDOUT("successfully established a socket connection");
-
     /**
      * @TODO: Implement support and abstraction for setting
      *        and getting multiple options. This particular
@@ -679,7 +674,6 @@ void Socket<socket_t, proc_t>::connect_server() {
      *        already a socket
      */
     const int toggle = 1;
-
     if(setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (const void*)&toggle, sizeof(toggle)) == -1) {
         throw SocketException("setsockopt SO_REUSEADDR failed: %s", std::strerror(errno));
     }
@@ -696,7 +690,6 @@ void Socket<socket_t, proc_t>::connect_server() {
     }
 
 #endif
-
     DEBUG_STDOUT("setting memory segment size of struct sockaddr_in to 0");
 
     /**
@@ -705,16 +698,12 @@ void Socket<socket_t, proc_t>::connect_server() {
      */
     memset(m_host, (int)sizeof(struct sockaddr_in), (0));
 
-    /**
-     * Connection info.
-     */
+    // Connection info.
     m_sockaddr.sin_family      = m_af;
     m_sockaddr.sin_addr.s_addr = INADDR_ANY;
     m_sockaddr.sin_port        = htons(m_port);
 
-    /**
-     * If binding fails, throw an exception.
-     */
+    // If binding fails, throw an exception.
     if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
         close(m_socket);
         throw SocketException("bind failed: %s", std::strerror(errno));
@@ -961,7 +950,7 @@ template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 std::string Socket<socket_t, proc_t>::receive() {
     char buffer[ m_buf_size ];
     socklen_t sock_size = sizeof(struct sockaddr_in);
-    memset(buffer, 0,   m_buf_size);
+    memset(buffer, 0, m_buf_size);
 
 #if defined(PREDEF_PLATFORM_LINUX)
     if(socket_t == TCP) {
