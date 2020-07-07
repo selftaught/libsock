@@ -665,10 +665,6 @@ void Socket<socket_t, proc_t>::connect_server() {
 
 #if defined(PREDEF_PLATFORM_LINUX)
     m_socket = socket(m_af, socket_t, m_protocol);
-
-    /**
-     * Throw an exception if the socket connection failed.
-     */
     if(m_socket == -1) {
         throw SocketException("socket failed: %s", std::strerror(errno));
     }
@@ -707,7 +703,7 @@ void Socket<socket_t, proc_t>::connect_server() {
      * Set all bytes of m_host to zero. memset() is MT-Safe
      * See: http://man7.org/linux/man-pages/man3/memset.3.html
      */
-    memset(m_host, sizeof(struct sockaddr_in), 0);
+    memset(m_host, (int)sizeof(struct sockaddr_in), (0));
 
     /**
      * Connection info.
@@ -965,16 +961,10 @@ template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 std::string Socket<socket_t, proc_t>::receive() {
     char buffer[ m_buf_size ];
     socklen_t sock_size = sizeof(struct sockaddr_in);
-    memset(buffer, 0, m_buf_size);
+    memset(buffer, 0,   m_buf_size);
 
 #if defined(PREDEF_PLATFORM_LINUX)
-    /**
-     * TCP
-     */
     if(socket_t == TCP) {
-        /**
-         * Server
-         */
         if(proc_t == SERVER) {
             DEBUG_STDOUT("accepting connection from client...");
             m_tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
@@ -987,59 +977,37 @@ std::string Socket<socket_t, proc_t>::receive() {
                 throw SocketException("read failed: %s", std::strerror(errno));
             }
         }
-        /**
-         * Client
-         */
         else {
             DEBUG_STDOUT("listening for a response from the server...");
-
             if(read(m_socket, buffer, m_buf_size) == -1) {
                 close(m_socket);
                 throw SocketException("read failed: %s", std::strerror(errno));
             }
         }
     }
-    /**
-     * UDP
-     */
     else if(socket_t == UDP) {
-        /**
-         * Server
-         */
         if(proc_t == SERVER) {
             DEBUG_STDOUT("calling recvfrom");
-
             if(recvfrom(m_socket, buffer, m_buf_size, 0, (struct sockaddr*)&m_client_sockaddr, &sock_size) == -1) {
                 throw SocketException("recvfrom failed: %s", std::strerror(errno));
             }
 
-            /**
-             * Get addr info about who sent the udp packet.
-             */
             m_client_host = gethostbyaddr((const char*)&m_client_sockaddr.sin_addr.s_addr, sock_size, AF_INET);
-
             if (m_client_host == NULL) {
                 throw SocketException("gethostbyaddr: failed to get client info");
             }
 
             m_client_addr = inet_ntoa(m_client_sockaddr.sin_addr);
-
             if (m_client_addr == NULL) {
                 throw SocketException("inet_ntoa: returned null - couldn't get client addr");
             }
         }
-        /**
-         * Client
-         */
         else {
            /**
             * @TODO: implement UDP client recv functionality
             */
         }
     }
-    /**
-     * RAW
-     */
     else if(socket_t == RAW) {
 
     }
