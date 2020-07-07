@@ -12,6 +12,7 @@
       <w>dlpi</w>
       <w>elif</w>
       <w>endl</w>
+      <w>errbuf</w>
       <w>fcntl</w>
       <w>getaddrinfo</w>
       <w>gethostbyaddr</w>
@@ -24,11 +25,13 @@
       <w>inet</w>
       <w>iostream</w>
       <w>libsockit</w>
+      <w>makeword</w>
       <w>membervar</w>
       <w>netdb</w>
       <w>netinet</w>
       <w>ntoa</w>
       <w>pollfd</w>
+      <w>pollin</w>
       <w>predef</w>
       <w>rarp</w>
       <w>recvfrom</w>
@@ -42,6 +45,7 @@
       <w>stoi</w>
       <w>tcpip</w>
       <w>unistd</w>
+      <w>vsnprintf</w>
       <w>winsock</w>
       <w>wsadata</w>
     </words>

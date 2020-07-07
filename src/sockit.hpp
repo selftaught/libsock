@@ -11,8 +11,6 @@
 #include <string>
 #include <vector>
 
-namespace libsockit {};
-
 /**
  * Make sure __cplusplus is defined because it's value will tell us what version of
  * C++ the compiler supports. It's value should be <= 199711L in pre-C++11 compilers.
@@ -381,6 +379,13 @@ protected:
     char* m_client_addr;
 
     /**
+     * @membervar: (double) m_recv_timeout
+     * @class: Socket
+     * @accessor: protected
+     */
+     double m_recv_timeout;
+
+    /**
      * If the current platform is *nix or darwin
      */
 #if defined(PREDEF_PLATFORM_LINUX)
@@ -534,7 +539,7 @@ public:
      */
     void init();
     void disconnect();
-    void connect();
+    void connect(bool server = false);
 
     bool ready(const uint32_t&);
     bool set_blocking(int, bool blocking = false);
@@ -546,12 +551,13 @@ public:
     /**
      * Setters
      */
-    void set_hostname      (const std::string& hostname) { m_hostname   = hostname;           }
-    void set_port          (const uint16_t   & port    ) { m_port       = port;               }
-    void set_port          (const std::string& port    ) { m_port       = atoi(port.c_str()); }
-    void set_address_family(const int        & addrf   ) { m_af         = addrf;              }
-    void set_backlog       (const uint32_t   & backlog ) { m_backlog    = backlog;            }
-    void set_protocol      (const int        & protocol) { m_protocol   = protocol;           }
+    void set_hostname      (const std::string& hostname) { m_hostname     = hostname;           }
+    void set_port          (const uint16_t   & port    ) { m_port         = port;               }
+    void set_port          (const std::string& port    ) { m_port         = atoi(port.c_str()); }
+    void set_address_family(const int        & addrf   ) { m_af           = addrf;              }
+    void set_backlog       (const uint32_t   & backlog ) { m_backlog      = backlog;            }
+    void set_protocol      (const int        & protocol) { m_protocol     = protocol;           }
+    void set_recv_timeout  (double             timeout ) { m_recv_timeout = timeout             }
 
     /**
      * @function: handle
@@ -583,7 +589,7 @@ Socket<socket_t, proc_t>::~Socket() {
  *  based on the value of m_proc_type
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-void Socket<socket_t, proc_t>::connect() {
+void Socket<socket_t, proc_t>::connect(bool server) {
     /**
      * TCP specific declarations
      */
@@ -1065,6 +1071,14 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
 }
 
 typedef Socket<TCP, SERVER> TcpServer;
+
+/**
+ * @function: get_receive_timeout
+ */
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+double Socket<socket_t, proc_t>::get_receive_timeout() {
+    return m_recv_timeout;
+}
 
 /**
  *          osi model                   ip suite
