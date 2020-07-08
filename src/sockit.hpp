@@ -552,7 +552,7 @@ public:
     void set_address_family(const int        & addrf   ) { m_af           = addrf;              }
     void set_backlog       (const uint32_t   & backlog ) { m_backlog      = backlog;            }
     void set_protocol      (const int        & protocol) { m_protocol     = protocol;           }
-    void set_recv_timeout  (double             timeout ) { m_recv_timeout = timeout             }
+    void set_recv_timeout  (double             timeout ) { m_recv_timeout = timeout;            }
 
     /**
      * @function: handle
