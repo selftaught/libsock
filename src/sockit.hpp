@@ -536,7 +536,7 @@ public:
     void disconnect();
     void connect();
 
-    bool ready(const uint32_t&);
+    bool is_ready(const uint32_t&);
     bool set_blocking(int, bool blocking = false);
 
     std::string receive();
@@ -894,7 +894,7 @@ void Socket<socket_t, proc_t>::connect_client() {
  * @return: bool
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-bool Socket<socket_t, proc_t>::ready(const uint32_t& events) {
+bool Socket<socket_t, proc_t>::is_ready(const uint32_t& events) {
     return !(m_pfd[ 0 ].events & events);
 }
 
