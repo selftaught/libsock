@@ -15,3 +15,4 @@ src/*.swp
 examples/bin
 .idea
 src/notes.hpp
+doc

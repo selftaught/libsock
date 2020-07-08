@@ -1057,8 +1057,6 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
     return bytes_sent;
 }
 
-typedef Socket<TCP, SERVER> TcpServer;
-
 /**
  * @function: get_receive_timeout
  */
@@ -1066,5 +1064,7 @@ template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 double Socket<socket_t, proc_t>::get_receive_timeout() {
     return m_recv_timeout;
 }
+
+typedef Socket<TCP, SERVER> TcpServer;
 
 #endif
