@@ -9,7 +9,7 @@ namespace Sock {
             UDP();
             ~UDP();
 
-        void send();
+        Sock::Void send();
         Sock::Data receive();
     };
 }

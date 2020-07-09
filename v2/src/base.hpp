@@ -19,21 +19,21 @@ namespace Sock {
             // Member variables.
 
             // Socket addr info.
-            Sock::Host  host;
-            Sock::Port  port;
-            Sock::Level level;
+            Sock::Host  _host;
+            Sock::Port  _port;
+            Sock::Level _level;
 
 			// Note: "bound" is past tense for present "bind."
 			// This bool member variable will be set to true
 			// after making a call to ::bind. This is for
 			// tracking state.
-			Sock::Bool  bound;
-			Sock::Uint  fd;
-			Sock::Int   backlog;
+			Sock::Bool  _bound;
+			Sock::Uint  _fd;
+			Sock::Int   _backlog;
 
 			// Client and server info structs.
-			struct sockaddr_in client;
-			struct sockaddr_in server;
+			struct sockaddr_in _client;
+			struct sockaddr_in _server;
 
 			// Linux specific private member variables
 			// and member function prototypes.
@@ -80,7 +80,7 @@ namespace Sock {
 
 			// Derived classes are required to implement
 			// their own send and receive functions.
-            virtual void send() = 0;
+            virtual Sock::Void send() = 0;
             virtual Sock::Data receive() = 0;
 
 			Sock::Addr* from_sockaddr (struct sockaddr_in* addr);
@@ -89,7 +89,8 @@ namespace Sock {
             // Setters ...
 
             // Getters ...
-            Sock::Uint descriptor();
+            Sock::Uint fd();
+            Sock::Bool bound();
     };
 };
 

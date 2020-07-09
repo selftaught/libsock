@@ -2,9 +2,9 @@
 
 namespace Sock {
     Base::Base() {
-		bound = false;
-		host  = nullptr;
-		port  = 0;
+		_bound = false;
+		_host  = nullptr;
+		_port  = 0;
     }
 
     Base::~Base() {
@@ -34,8 +34,8 @@ namespace Sock {
 
     void Base::disconnect() {
  #ifdef PREDEF_PLATFORM_LINUX
-    	if (fd != 0) {
-    		::close(fd);
+    	if (_fd != 0) {
+    		::close(_fd);
     	}
  #elif defined(PREDEF_PLATFORM_WINDOWS)
  		// TODO...
@@ -45,7 +45,9 @@ namespace Sock {
     Sock::Addr* Base::from_sockaddr(struct sockaddr_in* sa) {
     	Sock::Addr* addr;
 
-    	addr = (Sock::Addr*)calloc(1, sizeof(Sock::Addr*));
+    	addr = (Sock::Addr*)calloc(1, sizeof(Sock::Addr));
+    	addr->ip = inet_ntoa(sa->sin_addr);
+    	addr->port = ntohs(sa->sin_port);
 
     	return addr;
     }
@@ -55,7 +57,11 @@ namespace Sock {
     	return sa;
     }
 
-    Sock::Uint Base::descriptor() {
-    	return fd;
+    Sock::Uint Base::fd() {
+    	return _fd;
+    }
+
+    Sock::Bool Base::bound() {
+    	return _bound;
     }
 };

@@ -9,7 +9,7 @@ namespace Sock {
 
     }
 
-    void TCP::send() {
+    Sock::Void TCP::send() {
 
     }
 

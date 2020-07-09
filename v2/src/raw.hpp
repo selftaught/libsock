@@ -9,7 +9,7 @@ namespace Sock {
 			Raw();
 			~Raw();
 
-        void send();
+        Sock::Void send();
         Sock::Data receive();
     };
 }
