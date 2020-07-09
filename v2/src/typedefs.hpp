@@ -11,6 +11,7 @@ namespace Sock {
     typedef intmax_t    Int;
     typedef uintmax_t   Uint;
     typedef std::string Data;
+    typedef void        Void;
     typedef struct {
     	Sock::IP   ip;
     	Sock::Port port;

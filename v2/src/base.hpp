@@ -10,40 +10,39 @@ namespace Sock {
 
 #endif
 
-			// Windows dependent, protected member variables
-			// and function prototypes.
+			// Windows specific protected member variables
+			// and member function prototypes.
 #if defined(PREDEF_PLATFORM_WINDOWS)
 
 #endif
         private:
-            // Member variables
-            // Connection info
+            // Member variables.
+
+            // Socket addr info.
             Sock::Host  host;
             Sock::Port  port;
             Sock::Level level;
 
 			// Note: "bound" is past tense for present "bind."
 			// This bool member variable will be set to true
-			// after Sock::Internal scoped calls to ::bind.
+			// after making a call to ::bind. This is for
+			// tracking state.
 			Sock::Bool  bound;
-
-			// Socket file descriptor
 			Sock::Uint  fd;
-
 			Sock::Int   backlog;
 
-			// client / server info structs
+			// Client and server info structs.
 			struct sockaddr_in client;
 			struct sockaddr_in server;
 
-			// Linux dependent, private member variables
-			// and function prototypes.
+			// Linux specific private member variables
+			// and member function prototypes.
 #if defined(PREDEF_PLATFORM_LINUX)
 
 #endif
 
-			// Windows dependent, private member variables
-			// and function prototypes.
+			// Window specific private member variables
+			// and member function prototypes.
 #if defined(PREDEF_PLATFORM_WINDOWS)
 
 #endif
@@ -59,28 +58,25 @@ namespace Sock {
                            << std::endl;
             }
 
-			// Linux dependent, public member variables
-			// and function prototypes.
+			// Linux specific public member variables
+			// and member function prototypes.
 #if defined(PREDEF_PLATFORM_LINUX)
 
 #endif
 
-			// Windows dependent, public member variables
-			// and function prototypes.
+			// Windows specific public member variables
+			// and member function prototypes.
 #if defined(PREDEF_PLATFORM_WINDOWS)
 
 #endif
             // Function prototypes & definitions
-            // Set and get socket option(s)
-            Sock::Int set_opt();
-
-            Sock::Int bind();
-            Sock::Int bind(Sock::Port port);
-
-            Sock::Int connect();
-            Sock::Int connect(Sock::Host host);
-
-            void disconnect();
+            // Set and get socket option(s).
+            Sock::Int  set_opt();
+            Sock::Int  bind();
+            Sock::Int  bind(Sock::Port port);
+            Sock::Int  connect();
+            Sock::Int  connect(Sock::Host host);
+            Sock::Void disconnect();
 
 			// Derived classes are required to implement
 			// their own send and receive functions.
@@ -90,9 +86,9 @@ namespace Sock {
 			Sock::Addr* from_sockaddr (struct sockaddr_in* addr);
 			struct sockaddr_in* to_sockaddr (Sock::Addr* addr);
 
-            // setters ...
+            // Setters ...
 
-            // getters ...
+            // Getters ...
             Sock::Uint descriptor();
     };
 };
