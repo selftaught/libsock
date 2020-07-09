@@ -8,4 +8,13 @@ namespace Sock {
     TCP::~TCP() {
 
     }
+
+    void TCP::send() {
+
+    }
+
+    Sock::Data TCP::receive() {
+    	Sock::Data received;
+    	return received;
+    }
 };

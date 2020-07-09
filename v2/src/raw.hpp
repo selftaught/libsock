@@ -8,6 +8,9 @@ namespace Sock {
 		public:
 			Raw();
 			~Raw();
+
+        void send();
+        Sock::Data receive();
     };
 }
 

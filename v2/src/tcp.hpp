@@ -8,6 +8,9 @@ namespace Sock {
         public:
             TCP();
             ~TCP();
+
+        void send();
+        Sock::Data receive();
     };
 }
 

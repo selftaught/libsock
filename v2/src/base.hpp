@@ -24,7 +24,7 @@ namespace Sock {
 
 			// Note: "bound" is past tense for present "bind."
 			// This bool member variable will be set to true
-			// after internal scoped calls to ::bind.
+			// after Sock::Internal scoped calls to ::bind.
 			Sock::Bool  bound;
 
 			// Socket file descriptor
@@ -51,7 +51,6 @@ namespace Sock {
             Base();
             ~Base();
 
-            // << overload for printing base socket classes
             friend std::ostream& operator<< (std::ostream& out, const Base& sock) {
                 return out << "[Sock::Base]:"
                            << std::endl
@@ -73,20 +72,26 @@ namespace Sock {
 #endif
             // Function prototypes & definitions
             // Set and get socket option(s)
-            int set_opt();
+            Sock::Int set_opt();
 
-            int bind();
-            int bind(Sock::Port port);
+            Sock::Int bind();
+            Sock::Int bind(Sock::Port port);
 
-            int connect();
-            int connect(Sock::Host host);
+            Sock::Int connect();
+            Sock::Int connect(Sock::Host host);
 
             void disconnect();
 
+			// Derived classes are required to implement
+			// their own send and receive functions.
+            virtual void send() = 0;
+            virtual Sock::Data receive() = 0;
+
 			Sock::Addr* from_sockaddr (struct sockaddr_in* addr);
-			struct sockaddr_in to_sockaddr (Sock::Addr* addr);
-            // Public function prototypes
+			struct sockaddr_in* to_sockaddr (Sock::Addr* addr);
+
             // setters ...
+
             // getters ...
             Sock::Uint descriptor();
     };

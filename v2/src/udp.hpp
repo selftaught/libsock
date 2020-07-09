@@ -8,6 +8,9 @@ namespace Sock {
         public:
             UDP();
             ~UDP();
+
+        void send();
+        Sock::Data receive();
     };
 }
 

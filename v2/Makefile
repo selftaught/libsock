@@ -1,6 +1,6 @@
 ROOT_DIR=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-CC=gcc
+CC=g++
 CFLAGS=-I${ROOT_DIR}/src -c -v
 LDFLAGS=
 

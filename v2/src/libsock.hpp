@@ -3,6 +3,10 @@
 
 #include <iostream>
 #include <netdb.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string>
 
 #include "typedefs.hpp"
 #include "globals.hpp"

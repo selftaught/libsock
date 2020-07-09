@@ -8,4 +8,13 @@ namespace Sock {
     Raw::~Raw() {
 
     }
+
+    void Raw::send() {
+
+    }
+
+    Sock::Data Raw::receive() {
+    	Sock::Data received;
+    	return received;
+    }
 };
