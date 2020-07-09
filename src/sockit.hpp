@@ -148,8 +148,8 @@
 /**
  * Default recv char array lengths for UDP and TCP.
  */
-#define UDP_RECV_BUF_LEN 576
-#define TCP_RECV_BUF_LEN 1500
+#define UDP_MAX_BUF_LEN 1024
+#define TCP_MAX_BUF_LEN 1024
 
 /**
  * @enum: PROC_TYPE
@@ -189,6 +189,30 @@ enum SOCKET_TYPE {
     RDM = SOCK_RDM
 };
 
+// https://pubs.opengroup.org/onlinepubs/009696799/functions/setsockopt.html
+enum SOCKET_OPTION {
+    DEBUG           = SO_DEBUG,
+    BROADCAST       = SO_BROADCAST,
+    REUSE_ADDRESS   = SO_REUSEADDR,
+    KEEP_ALIVE      = SO_KEEPALIVE,
+    LINGER          = SO_LINGER,
+    SEND_BUFFER     = SO_SNDBUF,
+    RECEIVE_BUFFER  = SO_RCVBUF,
+    RECEIVE_TIMEOUT = SO_RCVTIMEO,
+    DONT_ROUTE      = SO_DONTROUTE,
+    SEND_TIMEOUT    = SO_SNDTIMEO
+};
+
+// https://pubs.opengroup.org/onlinepubs/009696799/basedefs/netinet/in.h.html
+enum SOCKET_LEVEL {
+    IP_V4      = IPPROTO_IP,
+    IP_V6      = IPPROTO_IPV6,
+    ICMP       = IPPROTO_ICMP,
+    RAW_PACKET = IPPROTO_RAW,
+    TRANSPORT  = IPPROTO_TCP,
+    DATAGRAM   = IPPROTO_UDP
+};
+
 /**
  * Define the default socket value. This is done because without
  * it, we'd have to add preprocessor conditions to each constructor
@@ -215,7 +239,7 @@ enum SOCKET_TYPE {
     #define DEBUG_STDOUT(x) \
         (std::cout << "[ " << __FILE__ << " ] " \
                    << "(func " << __FUNCTION__ << "): " \
-                   << "(line " << __LINE__ << "): " \
+                   << "(line " << __LINE__ << "):\t" \
                    << (x) \
                    << std::endl \
         )
@@ -277,9 +301,6 @@ public:
     }
 
 protected:
-    /**
-     * Error message.
-     */
     std::string msg_;
 
     /**
@@ -295,11 +316,32 @@ protected:
     }
 };
 
+/**
+ * @class: InvalidTypeException
+ */
+class InvalidProcTypeException
+    : public std::exception {
+protected:
+private:
+public:
+    InvalidProcTypeException() {}
+    ~InvalidProcTypeException() {}
+};
 
 /**
- * @class: Socket
- * @description:
- *  Base socket class.
+ *
+ */
+class UndefinedProcTypeException
+    : public std::exception {
+protected:
+private:
+public:
+    UndefinedProcTypeException() {}
+    ~UndefinedProcTypeException() {}
+};
+
+/**
+ *
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 class Socket {
@@ -382,32 +424,35 @@ protected:
      */
      double m_recv_timeout;
 
+     /**
+      * @membervar: (bool) m_is_bound
+      * @class: Socket
+      * @access: protected
+      */
+      bool m_is_bound;
+
 // If the current platform is *nix or darwin
 #if defined(PREDEF_PLATFORM_LINUX)
 
     /**
-     * @membervar: (int) m_socket
      * @accessor: protected
      * @platform: linux
      */
     int m_socket;
 
     /**
-     * @membervar: (int) m_tcp_socket
      * @accessor: protected
      * @platform: linux
      */
     int m_tcp_socket;
 
     /**
-     * @membervar: (struct hostent*) m_host
      * @accessor: protected
      * @platform: linux
      */
     struct hostent* m_host;
 
     /**
-     * @membervar: (struct hostent*) m_client_host
      * @accessor: protected
      * @platform: linux
      */
@@ -419,45 +464,16 @@ protected:
 #elif defined(PREDEF_PLATFORM_WINDOWS)
 
     /**
-     * @membervar: (SOCKET) m_result
      * @accessor: protected
      * @platform: windows
      */
     SOCKET  m_socket;
 
-    /**
-     * @membervar: (SOCKET) m_result
-     * @accessor: protected
-     * @platform: windows
-     */
 	SOCKET  m_socket_client;
-
-    /**
-     * @membervar: (SOCKET) m_result
-     * @accessor: protected
-     * @platform: windows
-     */
     WSADATA m_wsa;
 
-    /**
-     * @membervar: (struct addrinfo*) m_result
-     * @accessor: protected
-     * @platform: windows
-     */
 	struct addrinfo* m_result;
-
-    /**
-     * @membervar: (struct addrinfo*) m_ptr
-     * @accessor: protected
-     * @platform: windows
-     */
 	struct addrinfo* m_ptr;
-
-    /**
-     * @membervar: (struct addrinfo*) m_hints
-     * @accessor: protected
-     * @platform: windows
-     */
 	struct addrinfo  m_hints;
 
 #endif
@@ -467,20 +483,12 @@ protected:
 
 public:
 
-    /**
-     * @function: Socket
-     * @class: Socket
-     * @param: (const uint16_t&) port
-     * @param: (int) (default: 0) protocol
-     * @accessor: public
-     * @description:
-     *  Explicitly disconnect during destruction.
-     */
     Socket(const uint16_t& port, int protocol = 0):
         m_port(port),
         m_af(AF_INET),
         m_backlog(BACKLOG_LEN),
         m_protocol(protocol),
+        m_is_bound(false),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
 
@@ -500,6 +508,7 @@ public:
         m_af(AF_INET),
         m_backlog(BACKLOG_LEN),
         m_protocol(protocol),
+        m_is_bound(false),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
 
@@ -519,6 +528,7 @@ public:
         m_af(AF_INET),
         m_backlog(BACKLOG_LEN),
         m_protocol(protocol),
+        m_is_bound(false),
         m_socket(DEFAULT_SOCKET_VAL)
     {}
 
@@ -535,6 +545,7 @@ public:
     void init();
     void disconnect();
     void connect();
+    void bind(const uint16_t port);
 
     bool is_ready(const uint32_t&);
     bool set_blocking(int, bool blocking = false);
@@ -553,6 +564,16 @@ public:
     void set_backlog       (const uint32_t   & backlog ) { m_backlog      = backlog;            }
     void set_protocol      (const int        & protocol) { m_protocol     = protocol;           }
     void set_recv_timeout  (double             timeout ) { m_recv_timeout = timeout;            }
+
+    /**
+     * Socket option setters
+     */
+    void set_option        (SOCKET_LEVEL level, SOCKET_OPTION opt, const void* val, socklen_t len);
+    void set_ip_v4_option  () {}
+    void set_ip_v6_option  () {}
+    void set_icmp_option   () {}
+    void set_tcp_option    () {}
+    void set_udp_option    () {}
 
     /**
      * @function: handle
@@ -577,6 +598,17 @@ Socket<socket_t, proc_t>::~Socket() {
 }
 
 /**
+ * @function: bind
+ * @class: Socket
+ */
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+void Socket<socket_t, proc_t>::bind(const uint16_t port) {
+    if (this->m_is_bound) {
+        this->disconnect();
+    }
+}
+
+/**
  * @function: connect
  * @class: Socket
  * @description:
@@ -585,9 +617,10 @@ Socket<socket_t, proc_t>::~Socket() {
  */
 template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
 void Socket<socket_t, proc_t>::connect() {
-    m_buf_size = (socket_t == TCP ? TCP_RECV_BUF_LEN : UDP_RECV_BUF_LEN);
+    m_buf_size = (socket_t == TCP ? TCP_MAX_BUF_LEN : UDP_MAX_BUF_LEN);
     if(proc_t == UNDEF) {
-        throw SocketException("undefined service type");
+        throw SocketException("undefined proc type");
+        // @TODO: throw UndefinedProcTypeException();
     }
 
     if(proc_t == SERVER) {
@@ -597,7 +630,8 @@ void Socket<socket_t, proc_t>::connect() {
         connect_client();
     }
     else {
-        throw SocketException("invalid service type");
+        throw SocketException("invalid proc type");
+        // @TODO: throw InvalidProcTypeException();
     }
 
     m_pfd[0].fd     = m_socket;
@@ -615,7 +649,7 @@ void Socket<socket_t, proc_t>::disconnect() {
 
 #if defined(PREDEF_PLATFORM_LINUX)
     if(m_socket != -1) {
-        close(m_socket);
+        ::close(m_socket);
     }
 #elif defined(PREDEF_PLATFORM_WINDOWS)
     if (m_result != NULL) {
@@ -697,7 +731,7 @@ void Socket<socket_t, proc_t>::connect_server() {
     m_sockaddr.sin_port        = htons(m_port);
 
     // If binding fails, throw an exception.
-    if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
+    if(::bind(m_socket, (struct sockaddr*)&m_sockaddr, sizeof(struct sockaddr_in)) == -1) {
         close(m_socket);
         throw SocketException("bind failed: %s", std::strerror(errno));
     }
@@ -797,48 +831,8 @@ void Socket<socket_t, proc_t>::connect_client() {
         throw SocketException("gethostbyname failed: %s", std::strerror(h_errno));
     }
 
-    /**
-     *
-     * @TODO:
-     *
-     *
-     *
     if (socket_t == UDP) {
-        struct addrinfo hints;
-        struct addrinfo *result, *rp;
-        int sfd, s, j;
-        size_t len;
-        ssize_t nread;
-        char buf[BUF_SIZE];
 
-        memset(&hints, 0, sizeof(struct addrinfo));
-        hints.ai_family   = AF_UNSPEC;
-        hints.ai_socktype = socket_t; 
-        hints.ai_flags    = 0;
-        hints.ai_protocol = 0;
-
-        s = getaddrinfo((char*)m_host->h_addr, htons(m_port), &hints, &result);
-
-        if (s != 0) {
-            throw SocketException("getaddrinfo call was not successful!");
-        }
-
-        for (rp = result; rp != NULL; rp = rp->ai_next) {
-            sfd = socket(
-                rp->ai_family,
-                rp->ai_socktype,
-                rp->ai_protocol
-            );
-
-            if (sfd == -1) {
-                continue;
-            }
-
-            if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) {
-                break;
-            }
-
-            close(sfd);
         }
 
         if (rp == NULL) {
@@ -874,7 +868,7 @@ void Socket<socket_t, proc_t>::connect_client() {
     }
     else if(socket_t == UDP) {
         socklen_t sock_size = sizeof(struct sockaddr*);
-        if(bind(m_socket, (struct sockaddr*)&m_sockaddr, sock_size) == -1) {
+        if(::bind(m_socket, (struct sockaddr*)&m_sockaddr, sock_size) == -1) {
             disconnect();
             throw SocketException("bind failed: %s", std::strerror(errno));
         }
@@ -886,6 +880,23 @@ void Socket<socket_t, proc_t>::connect_client() {
      */
 #endif
 }
+
+/**
+ * @function: set_option
+ */
+template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+void Socket<socket_t, proc_t>set_option(SOCKET_LEVEL lvl, SOCKET_OPTION opt, const void* val, socklen_t len) {
+    if (!m_socket) {
+        DEBUG_STDOUT("m_socket is undefined... calling this->connect() before setting socket option");
+        this->connect();
+        DEBUG_STDOUT("this->connect() successful")
+    }
+
+    int rc = setsockopt(m_socket, (int)lvl, (int)opt, (char*)&val, len);
+}
+
+//template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
+//void Socket<socket_t, proc_t>bind(...) {}
 
 /**
  * @function: ready
@@ -935,7 +946,6 @@ bool Socket<socket_t, proc_t>::set_blocking(int fd, bool blocking) {
 }
 
 /**
- * @function: receive
  * @class: Socket
  * @return: std::string
  */
@@ -951,11 +961,11 @@ std::string Socket<socket_t, proc_t>::receive() {
             DEBUG_STDOUT("accepting connection from client...");
             m_tcp_socket = accept(m_socket, (struct sockaddr*)&m_sockaddr, &sock_size);
             if(m_tcp_socket == -1) {
-                close(m_tcp_socket);
+                ::close(m_tcp_socket);
                 throw SocketException("accept failed: %s", std::strerror(errno));
             }
             if(read(m_tcp_socket, &buffer, m_buf_size) == -1) {
-                close(m_tcp_socket);
+                ::close(m_tcp_socket);
                 throw SocketException("read failed: %s", std::strerror(errno));
             }
         }
@@ -1002,7 +1012,6 @@ std::string Socket<socket_t, proc_t>::receive() {
 }
 
 /**
- * @function: send
  * @param (const std::string&) message - message to send
  * @param (bool) (default: false) OOB - out of bounds
  * @return ssize_t
@@ -1055,14 +1064,6 @@ ssize_t Socket<socket_t, proc_t>::send(const std::string& message, bool OOB) {
      */
 #endif
     return bytes_sent;
-}
-
-/**
- * @function: get_receive_timeout
- */
-template<SOCKET_TYPE socket_t, PROC_TYPE proc_t>
-double Socket<socket_t, proc_t>::get_receive_timeout() {
-    return m_recv_timeout;
 }
 
 typedef Socket<TCP, SERVER> TcpServer;
