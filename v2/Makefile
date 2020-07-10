@@ -20,6 +20,10 @@ SO_CFLAGS=\
 		   -g                      \
 		   -Wl -v
 
+# SL = Static Library = .a
+SL_NAME= libsock.a
+SL_FLAGS=
+SL_CFLAGS=
 
 all: print_make_vars clean setup $(SOURCES) build
 
@@ -42,7 +46,9 @@ $(SOURCES):
 	${CC} ${CFLAGS} ${SOURCE_DIR}/$@.cpp -o ${OBJ_DIR}/$@.o
 
 build:
-	@echo "\033[93mBuilding\033[0m..."
-	$(CC) $(SO_CFLAGS) $(SO_LDFLAGS) ${OBJ_DIR}/*.o -o ${ROOT_DIR}/${SO_NAME}
+	@echo "\033[93mBuilding\033[0m shared object lib..."
+	$(CC) $(SO_CFLAGS) $(SO_LDFLAGS) $(OBJ_DIR)/*.o -o $(ROOT_DIR)/$(SO_NAME)
+	@echo "\033[93mBuilding\033[0m static library..."
+	ar rcs $(SL_NAME) $(ROOT_DIR)/$(SL_NAME)
 
 
