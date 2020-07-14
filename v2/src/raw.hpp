@@ -9,7 +9,10 @@ namespace Sock {
 			Raw();
 			~Raw();
 
-        Sock::Void send();
+        Sock::RetCode send();
+        Sock::RetCode connect();
+        Sock::RetCode connect(Sock::Addr* addr = nullptr);
+
         Sock::Data receive();
     };
 }

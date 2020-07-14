@@ -7,28 +7,19 @@ namespace Sock {
 		_port  = 0;
     }
 
-    Base::~Base() {
-		disconnect();
+    Base::Base(Sock::Host host, Sock::Port port) {
+    	_host  = host;
+    	_port  = port;
+    	_bound = false;
     }
 
-	Sock::Int Base::set_opt() {
-		return 0;
-	}
-
     Sock::Int Base::bind() {
+		// TODO...
 		return 0;
     }
 
     Sock::Int Base::bind(Sock::Port port) {
-    	return 0;
-    }
-
-    Sock::Int Base::connect() {
-
-    	return 0;
-    }
-
-    Sock::Int Base::connect(Sock::Host host) {
+		// TODO...
     	return 0;
     }
 
@@ -44,19 +35,21 @@ namespace Sock {
 
     Sock::Addr* Base::from_sockaddr(struct sockaddr_in* sa) {
     	Sock::Addr* addr;
-
     	addr = (Sock::Addr*)calloc(1, sizeof(Sock::Addr));
     	addr->ip = inet_ntoa(sa->sin_addr);
     	addr->port = ntohs(sa->sin_port);
-
     	return addr;
     }
 
     struct sockaddr_in* Base::to_sockaddr(Sock::Addr* addr) {
-    	struct sockaddr_in* sa;
+    	struct sockaddr_in* sa = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in));
+        sa->sin_family = AF_INET;
+        sa->sin_port = htons(addr->port);
+        inet_aton(addr->ip.c_str(), &(sa->sin_addr));
     	return sa;
     }
 
+	// Getters
     Sock::Uint Base::fd() {
     	return _fd;
     }
@@ -64,4 +57,18 @@ namespace Sock {
     Sock::Bool Base::bound() {
     	return _bound;
     }
+
+    Sock::Host Base::host() {
+    	return _host;
+    }
+
+    Sock::Port Base::port() {
+    	return _port;
+    }
+
+    // Setters
+	Sock::Int Base::set_opt() {
+		// TODO...
+		return 0;
+	}
 };

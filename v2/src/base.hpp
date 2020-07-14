@@ -3,7 +3,7 @@
 
 namespace Sock {
     class Base {
-        protected:
+        private:
 			// Linux dependent, protected member variables
 			// and function prototypes.
 #if defined(PREDEF_PLATFORM_LINUX)
@@ -15,13 +15,13 @@ namespace Sock {
 #if defined(PREDEF_PLATFORM_WINDOWS)
 
 #endif
-        private:
+        protected:
             // Member variables.
 
             // Socket addr info.
-            Sock::Host  _host;
-            Sock::Port  _port;
-            Sock::Level _level;
+            Sock::Host _host;
+            Sock::Port _port;
+            Sock::Type _type;
 
 			// Note: "bound" is past tense for present "bind."
 			// This bool member variable will be set to true
@@ -40,7 +40,6 @@ namespace Sock {
 #if defined(PREDEF_PLATFORM_LINUX)
 
 #endif
-
 			// Window specific private member variables
 			// and member function prototypes.
 #if defined(PREDEF_PLATFORM_WINDOWS)
@@ -48,13 +47,13 @@ namespace Sock {
 #endif
         public:
             Base();
-            ~Base();
+            Base(Sock::Host host, Sock::Port port);
+            virtual ~Base() { disconnect(); }
 
-            friend std::ostream& operator<< (std::ostream& out, const Base& sock) {
-                return out << "[Sock::Base]:"
-                           << std::endl
-                           << std::endl
-                           << "\t"
+            friend std::ostream& operator<< (std::ostream& out, Base& sock) {
+                return out << "[Sock::Base]:\n\n"
+                           << "\t" << "hostname = " << (sock._host == nullptr ? "NOT SET" : sock._host) << "\n"
+                           << "\t" << "port = " << (sock._port > 0 ? sock._port : 0x00) << "\n"
                            << std::endl;
             }
 
@@ -74,15 +73,15 @@ namespace Sock {
             Sock::Int  set_opt();
             Sock::Int  bind();
             Sock::Int  bind(Sock::Port port);
-            Sock::Int  connect();
-            Sock::Int  connect(Sock::Host host);
             Sock::Void disconnect();
 
 			// Derived classes are required to implement
 			// their own send and receive functions.
-            virtual Sock::Void send() = 0;
+            virtual Sock::RetCode send() = 0;
+            virtual Sock::RetCode connect() = 0;
             virtual Sock::Data receive() = 0;
 
+			// helpers
 			Sock::Addr* from_sockaddr (struct sockaddr_in* addr);
 			struct sockaddr_in* to_sockaddr (Sock::Addr* addr);
 
@@ -91,6 +90,8 @@ namespace Sock {
             // Getters ...
             Sock::Uint fd();
             Sock::Bool bound();
+            Sock::Host host();
+            Sock::Port port();
     };
 };
 

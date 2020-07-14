@@ -7,9 +7,11 @@ namespace Sock {
         private:
         public:
             TCP();
+            TCP(Sock::Host host, Sock::Port port);
             ~TCP();
 
-        Sock::Void send();
+        Sock::RetCode send();
+        Sock::RetCode connect();
         Sock::Data receive();
     };
 }
